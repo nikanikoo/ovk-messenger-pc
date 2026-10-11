@@ -183,7 +183,13 @@ async function main() {
   if (fs.existsSync(path.join(localRuntime, localExecutable))) {
     const output = path.join(releaseRoot, outputName)
     fs.mkdirSync(releaseRoot, { recursive: true })
-    fs.rmSync(output, { recursive: true, force: true })
+    try {
+      fs.rmSync(output, { recursive: true, force: true })
+    } catch (error) {
+      if (!fs.existsSync(output) || !fs.statSync(output).isDirectory() || fs.readdirSync(output).length !== 0) {
+        throw error
+      }
+    }
     copyTree(localRuntime, output)
     if (platform === 'win32') {
       const windowsExecutable = path.join(output, localExecutable)
@@ -217,7 +223,7 @@ async function main() {
     executableName: platform === 'win32' ? 'ovk' : 'OpenVK',
     icon: platform === 'win32' ? path.join(assets, 'tray.ico') : undefined,
     extraResource: platform === 'darwin' ? extras.map(file => path.join(assets, file)) : [],
-    appVersion: '26.0'
+    appVersion: '26.0.1'
   })
   if (platform !== 'darwin') {
     for (const output of outputs) {
