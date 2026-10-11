@@ -186,6 +186,7 @@
       palette['settings-separator-bg'] = dayColors.border
       palette['settings-buttonlight-hover-bg'] = dayColors.hover
       palette['dialogitem-selected-bg'] = accent
+      palette['dialog-message-selected-select-icon'] = accent
       palette['accpanel-bg'] = dayColors.hover
       palette['accpanel-border-right'] = dayColors.border
       palette['accpanel-sep-border-bottom'] = dayColors.border
