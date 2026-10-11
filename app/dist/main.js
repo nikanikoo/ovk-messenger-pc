@@ -9245,7 +9245,7 @@ module.exports = function(e) {
           try {
             for (var p, h = i[Symbol.iterator](); !(c = (p = h.next()).done); c = !0) {
               var m = p.value;
-              l.dialogsList.push(m.id), s.dialogs[m.id] = m, m.lastMessage.id > s.maxMsgId && (s.maxMsgId = m.lastMessage.id)
+              l.dialogsList.push(m.id), s.dialogs[m.id] = m, m.lastMessage && m.lastMessage.id > s.maxMsgId && (s.maxMsgId = m.lastMessage.id)
             }
           } catch (e) {
             d = !0, f = e
@@ -14930,7 +14930,7 @@ module.exports = function(e) {
                 h = p.peer.id;
               if (t.first || !B.default.isDialogLoadedInTab(o, h, r)) {
                 var m = B.default.getDialog(o, h);
-                m ? (m.setUnreadCount(p.unread_count), 0 != o && (m.setIsImportant(!!p.important), m.setIsUnanswered(!!p.unanswered)), m.updateLastMessage(c), m._incrementMutation()) : (m = d.default.FromAPIConversationObject(p), m.updateLastMessage(c)), f.list.push(m), m.isUser() && a.push(m.id), m.hasLastMessage() && (m.lastMessage.out || a.push(m.lastMessage.fromId), m.lastMessage.hasAction() && m.lastMessage.action.isMemberUserOrGroup() && a.push(m.lastMessage.action.getMemberId())), m.isChat() && m.getActiveIds().length && a.push.apply(a, m.getActiveIds().slice(0, 4)), m.isChat() && (0, y.isTimestamp)(m.pushSettings.disabledUntil) && e.setPushSettings(o, m.id, m.pushSettings, !1)
+                m ? (m.setUnreadCount(p.unread_count), 0 != o && (m.setIsImportant(!!p.important), m.setIsUnanswered(!!p.unanswered)), c && m.updateLastMessage(c), m._incrementMutation()) : (m = d.default.FromAPIConversationObject(p), c && m.updateLastMessage(c)), f.list.push(m), m.isUser() && a.push(m.id), m.hasLastMessage() && (m.lastMessage.out || a.push(m.lastMessage.fromId), m.lastMessage.hasAction() && m.lastMessage.action.isMemberUserOrGroup() && a.push(m.lastMessage.action.getMemberId())), m.isChat() && m.getActiveIds().length && a.push.apply(a, m.getActiveIds().slice(0, 4)), m.isChat() && (0, y.isTimestamp)(m.pushSettings.disabledUntil) && e.setPushSettings(o, m.id, m.pushSettings, !1)
               }
             }
             return a = (0, w.default)(a), f.count = n.conversations.count, t.lp && (f.lp = n.lp), P.default.loadUsersPromise(a)
