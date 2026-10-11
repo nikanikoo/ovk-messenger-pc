@@ -20,7 +20,7 @@ function safe(str) {
 function hide(el) { ge(el).style.display = 'none' }
 function show(el) { ge(el).style.display = 'block' }
 function setFocusable(focusable) {
-  if (focusable) {
+  if (focusable || process.platform == 'win32') {
     curWindow.setFocusable(true)
     curWindow.setSkipTaskbar(true)
   } else {

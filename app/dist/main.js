@@ -7617,7 +7617,8 @@ module.exports = function(e) {
                 data: {
                   type: "message",
                   peerId: t,
-                  groupId: e
+                  groupId: e,
+                  messageId: n.id
                 }
               };
               x.default.show(f)
@@ -21479,7 +21480,7 @@ module.exports = function(e) {
             })
           });
           var i = new f.Message;
-          i.draftFwd = [], b.default.smartSend(r, o, i, t)
+          i.draftFwd = [], i.draftReplyTo = n.messageId || null, b.default.smartSend(r, o, i, t)
         }
       }, {
         key: "getDialogAvatar",
@@ -36791,7 +36792,7 @@ module.exports = function(e) {
       minimizable: !1,
       maximizable: !1,
       closable: !1,
-      focusable: (0, g.isLinux)(),
+      focusable: (0, g.isLinux)() || "win32" === process.platform,
       skipTaskbar: !0,
       alwaysOnTop: !0,
       title: "VK Notification",
