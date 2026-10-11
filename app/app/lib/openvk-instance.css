@@ -1,0 +1,29 @@
+.login_view {
+  overflow-y: auto;
+}
+
+.openvk-instance-options {
+  margin: 12px 0 4px;
+}
+
+.openvk-instance-label {
+  color: var(--bluegray-fg);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.openvk-instance-options .dropdown_input {
+  min-height: 36px;
+  line-height: 22px;
+  border: 1px solid var(--login-input-border);
+  background: var(--login-input-bg);
+  color: var(--login-input-fg);
+}
+
+.openvk-custom-instance {
+  margin-top: 10px;
+}
+
+.openvk-instance-options .checkbox {
+  margin-top: 4px;
+}

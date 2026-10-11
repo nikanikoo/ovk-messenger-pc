@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <title></title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" href="./nt7/nt7.css" type="text/css" />
+  <script type="text/javascript" src="./nt7/nt7.js"></script>
+</head>
+<body onload="onload()">
+  <div id="nt-root">
+    <div class="title -text-single-line"><div class="title-close" id="nt-close-button"></div>OpenVK Messenger</div>
+    <div class="content -notification-content" id="nt-content">
+      <div id="nt-notification-content" style="display: block">
+        <div class="avatar">
+          <img id="nt-avatar" />
+        </div>
+        <div class="nt-info">
+          <div class="nt-name -text-single-line" id="nt-name"></div>
+          <div class="nt-text -text-single-line" id="nt-text"></div>
+        </div>
+        <div class="reply-button" id="nt-reply-button">
+          <div class="reply-button-icon"></div>
+        </div>
+      </div>
+      <div id="nt-reply-content" style="display: none">
+        <div class="reply-send-button" id="nt-reply-send-button"></div>
+        <textarea maxlength="2048" class="reply-ta" id="nt-reply-ta"></textarea>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">init()</script>
+</body>
+</html>

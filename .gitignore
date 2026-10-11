@@ -1,0 +1,17 @@
+node_modules/
+.npm-cache/
+.tools/
+release/
+.stage/
+__pycache__/
+*.py[cod]
+
+# These bundled native dependencies are required to build the shipped targets.
+!app/node_modules/
+!app/node_modules/**
+!native/win32-ia32/node_modules/
+!native/win32-ia32/node_modules/**
+!native/linux-x64/node_modules/
+!native/linux-x64/node_modules/**
+!native/darwin-x64/node_modules/
+!native/darwin-x64/node_modules/**

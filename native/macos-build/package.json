@@ -1,0 +1,16 @@
+{
+  "name": "openvk-mac-native-build",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Source packages for rebuilding native addons against Electron 1.8.6 on Intel macOS",
+  "dependencies": {
+    "cld": "2.4.8",
+    "keyboard-layout": "2.0.13",
+    "spellchecker": "3.4.4",
+    "sqlite3": "4.0.1",
+    "vk-flex": "1.0.0"
+  },
+  "devDependencies": {
+    "node-gyp": "10.3.1"
+  }
+}

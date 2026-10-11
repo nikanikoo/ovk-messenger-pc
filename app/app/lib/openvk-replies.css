@@ -1,0 +1,15 @@
+.openvk-message-reply .im_fwd_message {
+  padding-top: 5px;
+}
+
+.openvk-reply-title {
+  margin: 10px 0 0 12px;
+}
+
+.openvk-draft-reply {
+  min-width: 200px;
+}
+
+.openvk-draft-reply .im_fwd_messages_title {
+  margin-bottom: 3px;
+}

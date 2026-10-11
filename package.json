@@ -1,0 +1,20 @@
+{
+  "name": "openvk-recovered-build",
+  "private": true,
+  "version": "26.0.0",
+  "description": "Packaging tools for the recovered OpenVK Electron application",
+  "scripts": {
+    "check:win": "node scripts/build.js --platform win32 --arch x64 --check",
+    "check:win32": "node scripts/build.js --platform win32 --arch ia32 --check",
+    "check:arch": "node scripts/build.js --platform linux --arch x64 --check",
+    "check:mac": "node scripts/build.js --platform darwin --arch x64 --check",
+    "build:win": "node scripts/build.js --platform win32 --arch x64",
+    "build:win32": "node scripts/build.js --platform win32 --arch ia32",
+    "build:linux": "node scripts/build.js --platform linux --arch x64",
+    "build:arch": "node scripts/build.js --platform linux --arch x64",
+    "build:mac": "node scripts/build.js --platform darwin --arch x64"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.0.0"
+  }
+}
