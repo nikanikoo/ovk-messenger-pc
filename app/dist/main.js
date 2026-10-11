@@ -7410,7 +7410,7 @@ module.exports = function(e) {
           if (n.edit && !d) return log("[IMController incomingMessage] edit=true, dialog " + i + " not exists, skip"), 0;
           if (d && !n.restore || n.edit || (u = !0), t.timestamp && void 0 !== t.text || (u = !0), t.attachments && t.attachments.attach1_type && (u = !0), t.attachments && t.attachments.fwd && (u = !0), t.attachments && t.attachments.geo && (u = !0), t.attachments && Object.keys(t.attachments).filter(function(e) {
               return "from" != e
-            }) > 0 && (u = !0), e || Y.default.userExists(a) || (u = !0), u) return log("[IMController incomingMessage] data.from_id=" + t.from_id + ", need to get message from api", n), n.edited && (n.timestamp = t.timestamp), this.fetchIncomingMessage(e, i, t.id, Object.assign({}, n, {
+            }).length > 0 && (u = !0), e || Y.default.userExists(a) || (u = !0), u) return log("[IMController incomingMessage] data.from_id=" + t.from_id + ", need to get message from api", n), n.edited && (n.timestamp = t.timestamp), this.fetchIncomingMessage(e, i, t.id, Object.assign({}, n, {
               conversationMessageId: t.attachments && (t.attachments.cmid || t.attachments.conversation_message_id)
             })), 1;
           var f = {
