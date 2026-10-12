@@ -10226,7 +10226,7 @@ module.exports = function(e) {
     return p.default.run("DELETE FROM users").then(function() {
       log("[friends.saveUsers] deleted, now inserting.."), p.default.raw.serialize(function() {
         p.default.raw.run("BEGIN TRANSACTION");
-        for (var t = ["user_id", "first_name", "last_name", "photo_50", "photo_100", "photo_200", "can_write", "phone"], n = p.default.raw.prepare("INSERT INTO users (" + t.join(",") + ") VALUES (" + new Array(t.length).fill("?").join(",") + ")"), o = 0; o < e.length; o++) {
+        for (var t = ["user_id", "first_name", "last_name", "photo_50", "photo_100", "photo_200", "can_write", "phone"], n = p.default.raw.prepare("INSERT OR REPLACE INTO users (" + t.join(",") + ") VALUES (" + new Array(t.length).fill("?").join(",") + ")"), o = 0; o < e.length; o++) {
           var r = e[o];
           n.run(r.id, r.firstName, r.lastName, r.photo_50, r.photo_100, r.photo_200, (0, g.intval)(r.canWrite), r.phone)
         }
