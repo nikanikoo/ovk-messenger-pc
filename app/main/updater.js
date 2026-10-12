@@ -120,7 +120,7 @@ function getUpdateAsset(manifest) {
   if (process.platform == 'win32') {
     filename = 'OpenVK-win32-' + (process.arch == 'x64' ? 'x64' : 'ia32') + '.zip'
   } else if (process.platform == 'linux') {
-    filename = 'OpenVK-linux-' + (process.arch == 'x64' ? 'x64' : 'ia32') + '.zip'
+    filename = 'OpenVK-linux-' + (process.arch == 'x64' ? 'x64' : 'ia32') + '.tar.gz'
   } else {
     return null
   }

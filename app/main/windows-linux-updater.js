@@ -74,16 +74,15 @@ class Updater extends EventEmitter {
       //}
 
       this.updateData = result.data
-      if (!this.updateData.url) {
-        const platform = process.platform == 'win32'
-          ? process.arch == 'x64' ? 'win64' : 'win32'
-          : process.platform == 'linux'
-            ? process.arch == 'x64' ? 'linux64' : 'linux32'
-            : process.platform
-        const assets = this.updateData.downloads || this.updateData.assets || {}
-        const asset = assets[platform] || assets[process.platform]
-        this.updateData.url = typeof asset == 'string' ? asset : asset && asset.url
-      }
+      const platform = process.platform == 'win32'
+        ? process.arch == 'x64' ? 'win64' : 'win32'
+        : process.platform == 'linux'
+          ? process.arch == 'x64' ? 'linux64' : 'linux32'
+          : process.platform
+      const assets = this.updateData.downloads || this.updateData.assets || {}
+      const asset = assets[platform] || assets[process.platform]
+      const platformURL = typeof asset == 'string' ? asset : asset && asset.url
+      if (platformURL) this.updateData.url = platformURL
       if (!this.updateData.url) {
         throw new Error('Update manifest has no download URL for ' + process.platform + '-' + process.arch)
       }
@@ -91,7 +90,7 @@ class Updater extends EventEmitter {
     })
     .then(() => {
       // Download
-      this.downloadPath = temp.path({ suffix: '.zip' })
+      this.downloadPath = temp.path({ suffix: process.platform == 'linux' ? '.tar.gz' : '.zip' })
       this.downloading = true
       //_log('downloading ' + this.updateData.url + ' to ' + this.downloadPath)
       return this._download(this.updateData.url, this.downloadPath)
@@ -101,10 +100,19 @@ class Updater extends EventEmitter {
       .then(dir => {
         //_log('unpacking to ' + dir)
         this.unpackDir = dir
-        return pExtractZip(this.downloadPath, dir)
+        return process.platform == 'linux'
+          ? pExtractTarGz(this.downloadPath, dir)
+          : pExtractZip(this.downloadPath, dir)
       })
     })
-    .then(() => punlink(this.downloadPath, true))
+    .then(() => {
+      if (process.platform == 'linux') {
+        const executable = findExecutable(this.unpackDir, 'vk')
+        if (!executable) throw new Error('Linux update archive does not contain vk')
+        this.unpackDir = path.dirname(executable)
+      }
+      return punlink(this.downloadPath, true)
+    })
     .then(() => {
       //_log('an update has been successfully downloaded and unpacked')
       this.emit('update-downloaded', this.updateData)
@@ -537,6 +545,14 @@ function pExtractZip(src, dst) {
     extractZip(src, { dir: dst }, function (err) {
       asarBack()
       !err ? resolve() : reject(err)
+    })
+  })
+}
+
+function pExtractTarGz(src, dst) {
+  return new Promise(function(resolve, reject) {
+    child_process.execFile('tar', ['-xzf', src, '-C', dst], function(err, stdout, stderr) {
+      err ? reject(new Error('Failed to extract update tar.gz: ' + (stderr.trim() || err.message))) : resolve()
     })
   })
 }
