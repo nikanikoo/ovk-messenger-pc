@@ -2,32 +2,116 @@
   'use strict'
 
   var PREF_KEY = 'openvk.appearance.v1'
+  var WALLPAPER_KEY = 'openvk.chatWallpaper.v1'
   var themes = [
-    { id: 'classic', name: 'Классическая', image: 'classic.png', dark: false, bg: '#FFFFFF', fg: '#222222', defaultAccent: '#7E7E7E', border: '#E2E2E2' },
-    { id: 'day', name: 'День', image: 'day.png', dark: false, bg: '#E9F3FB', fg: '#222222', defaultAccent: '#43648B', border: '#D0E2E9' },
-    { id: 'tinted', name: 'Цветная', image: 'tinted.png', dark: true, bg: '#1F2333', fg: '#FFFFFF', defaultAccent: '#70A7F0', border: '#3A4051' },
-    { id: 'night', name: 'Ночная', image: 'night.png', dark: true, bg: '#242424', fg: '#FFFFFF', defaultAccent: '#A4A4A4', border: '#404040' }
+    { id: 'classic', image: 'classic.png', dark: false, bg: '#FFFFFF', fg: '#222222', defaultAccent: '#7E7E7E', border: '#E2E2E2' },
+    { id: 'day', image: 'day.png', dark: false, bg: '#E9F3FB', fg: '#222222', defaultAccent: '#43648B', border: '#D0E2E9' },
+    { id: 'tinted', image: 'tinted.png', dark: true, bg: '#1F2333', fg: '#FFFFFF', defaultAccent: '#70A7F0', border: '#3A4051' },
+    { id: 'night', image: 'night.png', dark: true, bg: '#242424', fg: '#FFFFFF', defaultAccent: '#A4A4A4', border: '#404040' }
   ]
   var accents = [
-    { id: 'blue', name: 'Синий', color: '#5181B8' },
-    { id: 'lightblue', name: 'Голубой', color: '#70A7F0' },
-    { id: 'green', name: 'Зелёный', color: '#5FBF64' },
-    { id: 'pink', name: 'Розовый', color: '#FA50A5' },
-    { id: 'orange', name: 'Оранжевый', color: '#FA9726' },
-    { id: 'purple', name: 'Фиолетовый', color: '#C858DC' },
-    { id: 'red', name: 'Красный', color: '#E95A5A' },
-    { id: 'darkgray', name: 'Тёмно-серый', color: '#586076' },
-    { id: 'yellow', name: 'Жёлтый', color: '#F8CA40' }
+    { id: 'blue', color: '#5181B8' },
+    { id: 'lightblue', color: '#70A7F0' },
+    { id: 'green', color: '#5FBF64' },
+    { id: 'pink', color: '#FA50A5' },
+    { id: 'orange', color: '#FA9726' },
+    { id: 'purple', color: '#C858DC' },
+    { id: 'red', color: '#E95A5A' },
+    { id: 'darkgray', color: '#586076' },
+    { id: 'yellow', color: '#F8CA40' }
   ]
-  var translations = {
-    ru: { accent: 'Акцентный цвет', custom: 'Свой цвет', choose: 'Выберите акцентный цвет', lightness: 'Светлость', cancel: 'Отмена', save: 'Сохранить', themes: ['Классическая', 'День', 'Цветная', 'Ночная'], accents: ['Синий', 'Голубой', 'Зелёный', 'Розовый', 'Оранжевый', 'Фиолетовый', 'Красный', 'Тёмно-серый', 'Жёлтый'] },
-    en: { accent: 'Accent color', custom: 'Custom color', choose: 'Choose accent color', lightness: 'Lightness', cancel: 'Cancel', save: 'Save', themes: ['Classic', 'Day', 'Tinted', 'Night'], accents: ['Blue', 'Light blue', 'Green', 'Pink', 'Orange', 'Purple', 'Red', 'Dark gray', 'Yellow'] },
-    uk: { accent: 'Акцентний колір', custom: 'Власний колір', choose: 'Виберіть акцентний колір', lightness: 'Світлість', cancel: 'Скасувати', save: 'Зберегти', themes: ['Класична', 'День', 'Кольорова', 'Нічна'], accents: ['Синій', 'Блакитний', 'Зелений', 'Рожевий', 'Помаранчевий', 'Фіолетовий', 'Червоний', 'Темно-сірий', 'Жовтий'] }
+  var lang = window.lang
+  var words = {
+    accent: lang.appearance_accent,
+    custom: lang.appearance_custom_color,
+    choose: lang.appearance_choose_accent,
+    lightness: lang.appearance_lightness,
+    cancel: lang.appearance_cancel,
+    save: lang.appearance_save,
+    themes: [lang.appearance_theme_classic, lang.appearance_theme_day, lang.appearance_theme_tinted, lang.appearance_theme_night],
+    accents: [lang.appearance_color_blue, lang.appearance_color_lightblue, lang.appearance_color_green, lang.appearance_color_pink, lang.appearance_color_orange, lang.appearance_color_purple, lang.appearance_color_red, lang.appearance_color_darkgray, lang.appearance_color_yellow]
   }
-  var savedLanguage = ''
-  try { savedLanguage = localStorage.getItem('st_lang') || '' } catch (_) {}
-  var language = (savedLanguage || navigator.language || 'ru').slice(0, 2).toLowerCase()
-  var words = translations[language] || translations.ru
+  var wallpaperWords = {
+    heading: lang.appearance_wallpaper_heading,
+    choose: lang.appearance_wallpaper_choose,
+    remove: lang.appearance_wallpaper_remove,
+    tile: lang.appearance_wallpaper_tile,
+    preview: lang.appearance_wallpaper_preview,
+    blur: lang.appearance_wallpaper_blur,
+    brightness: lang.appearance_wallpaper_brightness,
+    outline: lang.appearance_wallpaper_outline,
+    outlineStrength: lang.appearance_wallpaper_outline_strength,
+    outlineColor: lang.appearance_wallpaper_outline_color,
+    outlineAuto: lang.appearance_wallpaper_outline_auto,
+    apply: lang.appearance_wallpaper_apply,
+    missing: lang.appearance_wallpaper_missing,
+    today: lang.appearance_wallpaper_today,
+    theme: lang.appearance_wallpaper_theme
+  }
+
+  function readWallpaper() {
+    try {
+      var value = JSON.parse(localStorage.getItem(WALLPAPER_KEY) || '{}')
+      return { path: typeof value.path === 'string' ? value.path : '', tile: !!value.tile, blur: !!value.blur, brightness: typeof value.brightness === 'number' ? Math.max(0, Math.min(100, value.brightness)) : 100, outline: !!value.outline, outlineStrength: typeof value.outlineStrength === 'number' ? Math.max(0, Math.min(100, value.outlineStrength)) : 35, outlineColor: /^#[0-9a-f]{6}$/i.test(value.outlineColor || '') ? value.outlineColor.toUpperCase() : '', revision: value.revision || 0 }
+    } catch (_) { return { path: '', tile: false, blur: false, brightness: 100, outline: false, outlineStrength: 35, outlineColor: '', revision: 0 } }
+  }
+
+  var wallpaper = readWallpaper()
+  function fileUrl(filePath) {
+    var normalized = filePath.replace(/\\/g, '/')
+    return 'file://' + (/^[A-Za-z]:/.test(normalized) ? '/' : '') + normalized.split('/').map(function (part, index) {
+      return index === 0 && /^[A-Za-z]:$/.test(part) ? part : encodeURIComponent(part)
+    }).join('/')
+  }
+  function wallpaperUrl() { return wallpaper.path ? fileUrl(wallpaper.path) + '?v=' + wallpaper.revision : '' }
+  function outlineColor(theme, strength, customColor) {
+    var shade = hexToRgb(customColor) || (theme.dark ? [0, 0, 0] : [255, 255, 255])
+    return 'rgba(' + shade.join(', ') + ', ' + (strength * .007).toFixed(3) + ')'
+  }
+  function setWallpaperSurface(node, url, tile, blur, brightness, outline) {
+    if (!node) return
+    node.style.setProperty('--openvk-wallpaper-image', url ? 'url(' + JSON.stringify(url) + ')' : 'none')
+    node.style.setProperty('--openvk-wallpaper-brightness', brightness + '%')
+    node.classList.toggle('openvk-wallpaper-active', !!url)
+    node.classList.toggle('openvk-wallpaper-tiled', !!tile)
+    node.classList.toggle('openvk-wallpaper-blurred', !!blur)
+    node.classList.toggle('openvk-wallpaper-outlined', !!url && !!outline)
+  }
+  function applyWallpaper() {
+    var url = wallpaperUrl()
+    document.body.classList.toggle('openvk-wallpaper-outlined', !!url && wallpaper.outline)
+    document.body.style.setProperty('--openvk-wallpaper-text-halo', outlineColor(currentTheme(), wallpaper.outlineStrength, wallpaper.outlineColor))
+    document.body.style.setProperty('--openvk-wallpaper-selected-bg', rgba(currentAccent(), currentTheme().dark ? .24 : .18))
+    document.body.style.setProperty('--openvk-wallpaper-unread-bg', rgba(currentAccent(), currentTheme().dark ? .16 : .12))
+    document.querySelectorAll('.im_dialog_messages, .im_right_empty').forEach(function (node) {
+      if (!node.closest('.openvk-wallpaper-dialog')) setWallpaperSurface(node, url, wallpaper.tile, wallpaper.blur, wallpaper.brightness, wallpaper.outline)
+    })
+    document.querySelectorAll('.openvk-wallpaper-thumb').forEach(function (node) {
+      setWallpaperSurface(node, url, wallpaper.tile, wallpaper.blur, wallpaper.brightness, wallpaper.outline)
+      node.disabled = !wallpaper.path
+    })
+    document.querySelectorAll('.openvk-wallpaper-remove').forEach(function (node) { node.disabled = !wallpaper.path })
+  }
+
+  function checkboxMarkup(className, label) {
+    return '<div class="checkbox ' + className + '" role="checkbox" tabindex="0" aria-checked="false">' +
+      '<div class="checkbox_icon"><div class="checkbox_icon_icon"></div></div><div class="checkbox_label">' + label + '</div></div>'
+  }
+
+  function setCheckbox(node, checked) {
+    node.classList.toggle('-checked', checked)
+    node.setAttribute('aria-checked', String(checked))
+  }
+
+  function onCheckbox(node, callback) {
+    node.addEventListener('click', callback)
+    node.addEventListener('keydown', function (event) {
+      if (event.key === ' ' || event.key === 'Enter') {
+        event.preventDefault()
+        callback()
+      }
+    })
+  }
 
   function readPrefs() {
     try {
@@ -272,15 +356,45 @@
     document.body.classList.add('openvk-theme-' + theme.id)
     document.documentElement.style.setProperty('--ovk-accent', accent)
     document.querySelectorAll('.openvk-appearance').forEach(renderPanel)
+    applyWallpaper()
   }
 
   function createPanel(root) {
     root.className = 'settings_content settings_content_appearance openvk-appearance'
-    root.innerHTML = '<h2 class="openvk-appearance-title">' + (language === 'en' ? 'Appearance' : language === 'uk' ? 'Вигляд' : 'Внешний вид') + '</h2>' +
-      '<div class="openvk-theme-grid" role="radiogroup" aria-label="' + (language === 'en' ? 'Theme' : language === 'uk' ? 'Тема' : 'Тема') + '"></div>' +
+    root.innerHTML = '<h2 class="openvk-appearance-title">' + lang.settings_appearance + '</h2>' +
+      '<div class="openvk-theme-grid" role="radiogroup" aria-label="' + lang.appearance_theme_label + '"></div>' +
       '<h3 class="openvk-accent-heading">' + words.accent + '</h3>' +
-      '<div class="openvk-accent-list"></div>'
+      '<div class="openvk-accent-list"></div>' +
+      '<h3 class="openvk-accent-heading">' + wallpaperWords.heading + '</h3>' +
+      '<div class="openvk-wallpaper-row"><button type="button" class="openvk-wallpaper-thumb" aria-label="' + wallpaperWords.preview + '" title="' + wallpaperWords.preview + '"></button><button type="button" class="openvk-wallpaper-choose">' + wallpaperWords.choose + '</button><button type="button" class="openvk-wallpaper-remove">' + wallpaperWords.remove + '</button></div>' +
+      checkboxMarkup('openvk-wallpaper-tile', wallpaperWords.tile)
     renderPanel(root)
+    onCheckbox(root.querySelector('.openvk-wallpaper-tile'), function () {
+      wallpaper.tile = !wallpaper.tile
+      localStorage.setItem(WALLPAPER_KEY, JSON.stringify(wallpaper))
+      setCheckbox(root.querySelector('.openvk-wallpaper-tile'), wallpaper.tile)
+      applyWallpaper()
+    })
+    root.querySelector('.openvk-wallpaper-thumb').addEventListener('click', function () {
+      if (!wallpaper.path) return
+      if (!require('fs').existsSync(wallpaper.path)) return window.alert(wallpaperWords.missing)
+      openWallpaperDialog(wallpaper.path, true)
+    })
+    root.querySelector('.openvk-wallpaper-choose').addEventListener('click', function () {
+      var remote = require('electron').remote
+      remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
+        properties: ['openFile'],
+        filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] }]
+      }, function (paths) {
+        if (paths && paths[0]) openWallpaperDialog(paths[0])
+      })
+    })
+    root.querySelector('.openvk-wallpaper-remove').addEventListener('click', function () {
+      if (!wallpaper.path) return
+      localStorage.removeItem(WALLPAPER_KEY)
+      wallpaper = readWallpaper()
+      renderPanel(root)
+    })
   }
 
   function renderPanel(root) {
@@ -318,6 +432,129 @@
         applyTheme()
       })
     })
+    setCheckbox(root.querySelector('.openvk-wallpaper-tile'), wallpaper.tile)
+    applyWallpaper()
+  }
+
+  function openWallpaperDialog(filePath, existing) {
+    var previewUrl = existing ? wallpaperUrl() : fileUrl(filePath)
+    var selectedTheme = prefs.theme
+    var blurred = wallpaper.blur
+    var brightness = wallpaper.brightness
+    var outlined = wallpaper.outline
+    var outlineStrength = wallpaper.outlineStrength
+    var chosenOutlineColor = wallpaper.outlineColor
+    var overlay = document.createElement('div')
+    overlay.className = 'openvk-color-overlay openvk-wallpaper-overlay'
+    overlay.innerHTML = '<section class="openvk-color-dialog openvk-wallpaper-dialog" role="dialog" aria-modal="true" aria-labelledby="openvk-wallpaper-title">' +
+      '<div class="openvk-wallpaper-header"><h2 id="openvk-wallpaper-title">' + wallpaperWords.preview + '</h2><button type="button" class="openvk-wallpaper-theme" aria-label="' + wallpaperWords.theme + '" title="' + wallpaperWords.theme + '"></button></div>' +
+      '<div class="openvk-wallpaper-preview im_dialog_messages"><div class="openvk-wallpaper-conversation">' +
+      '<div class="im_dialog_date">' + wallpaperWords.today + '</div>' +
+      '<div class="im_dialog_message"><div class="im_dialog_message_container"><span class="im_dialog_message_photo openvk-wallpaper-avatar" aria-hidden="true">' + lang.appearance_preview_author_initial + '</span><div class="im_dialog_message_r"><div class="im_dialog_message_name_line"><span class="im_dialog_message_name">' + lang.appearance_preview_author + '</span><span class="im_dialog_message_time">12:40</span></div><div class="im_dialog_message_text">' + lang.appearance_preview_intro + '<br><br>' + lang.appearance_preview_body + '</div></div></div></div>' +
+      '<div class="im_dialog_message"><div class="im_dialog_message_container"><span class="im_dialog_message_photo openvk-wallpaper-avatar -mine" aria-hidden="true">' + lang.appearance_preview_me_initial + '</span><div class="im_dialog_message_r"><div class="im_dialog_message_name_line"><span class="im_dialog_message_name">' + lang.appearance_preview_me + '</span><span class="im_dialog_message_time">12:41</span></div><div class="im_dialog_message_text">' + lang.appearance_preview_reply + '</div></div></div></div>' +
+      '</div></div>' + checkboxMarkup('openvk-wallpaper-blur', wallpaperWords.blur) +
+      checkboxMarkup('openvk-wallpaper-outline', wallpaperWords.outline) +
+      '<label class="openvk-wallpaper-outline-strength"' + (outlined ? '' : ' hidden') + '>' + wallpaperWords.outlineStrength + '<input type="range" min="0" max="100" value="' + outlineStrength + '"><output>' + outlineStrength + '%</output></label>' +
+      '<div class="openvk-wallpaper-outline-color"' + (outlined ? '' : ' hidden') + '><button type="button" class="openvk-wallpaper-color-choose"><span class="openvk-wallpaper-color-swatch" aria-hidden="true"></span>' + wallpaperWords.outlineColor + '</button><button type="button" class="openvk-wallpaper-color-auto">' + wallpaperWords.outlineAuto + '</button></div>' +
+      '<label class="openvk-wallpaper-brightness">' + wallpaperWords.brightness + '<input type="range" min="0" max="100" value="' + brightness + '"><output>' + brightness + '%</output></label>' +
+      '<div class="openvk-color-actions"><button type="button" data-action="cancel">' + words.cancel + '</button><button type="button" class="-primary" data-action="apply">' + wallpaperWords.apply + '</button></div></section>'
+    document.body.appendChild(overlay)
+    var preview = overlay.querySelector('.openvk-wallpaper-preview')
+    var themeButton = overlay.querySelector('.openvk-wallpaper-theme')
+    var blurControl = overlay.querySelector('.openvk-wallpaper-blur')
+    var outlineControl = overlay.querySelector('.openvk-wallpaper-outline')
+    var outlineRow = overlay.querySelector('.openvk-wallpaper-outline-strength')
+    var outlineInput = outlineRow.querySelector('input')
+    var outlineColorRow = overlay.querySelector('.openvk-wallpaper-outline-color')
+    var outlineSwatch = outlineColorRow.querySelector('.openvk-wallpaper-color-swatch')
+    var outlineAutoButton = outlineColorRow.querySelector('.openvk-wallpaper-color-auto')
+    var brightnessInput = overlay.querySelector('.openvk-wallpaper-brightness input')
+    setCheckbox(blurControl, blurred)
+    setCheckbox(outlineControl, outlined)
+    function updatePreview() {
+      var theme = themes.filter(function (item) { return item.id === selectedTheme })[0] || themes[0]
+      var paletteData = window.OpenVKPaletteData || {}
+      var base = paletteData[theme.id === 'night' ? 'night' : theme.dark ? 'dark' : 'light'] || {}
+      var previewAccent = prefs.accentId ? currentAccent() : theme.defaultAccent
+      var previewBg = theme.id === 'tinted' ? recolorSurface(theme.bg, previewAccent, theme.id) : theme.bg
+      var vars = Object.keys(base).map(function (key) { return '--' + key + ':' + recolor(recolorSurface(base[key], previewAccent, theme.id), previewAccent, theme.dark, theme.id === 'night') + ';' }).join('')
+      vars += '--base-bg:' + previewBg + ';--base-fg:' + theme.fg + ';--user-name-fg:' + previewAccent + ';' +
+        '--openvk-wallpaper-text-halo:' + outlineColor(theme, outlineStrength, chosenOutlineColor) + ';'
+      overlay.querySelector('.openvk-wallpaper-dialog').style.cssText = vars
+      preview.style.backgroundColor = previewBg
+      themeButton.textContent = words.themes[themes.indexOf(theme)] + ' ↻'
+      outlineSwatch.style.backgroundColor = chosenOutlineColor || (theme.dark ? '#000000' : '#FFFFFF')
+      outlineAutoButton.hidden = !chosenOutlineColor
+      setWallpaperSurface(preview, previewUrl, wallpaper.tile, blurred, brightness, outlined)
+    }
+    themeButton.addEventListener('click', function () {
+      selectedTheme = themes[(themes.findIndex(function (item) { return item.id === selectedTheme }) + 1) % themes.length].id
+      updatePreview()
+    })
+    onCheckbox(blurControl, function () {
+      blurred = !blurred
+      setCheckbox(blurControl, blurred)
+      updatePreview()
+    })
+    onCheckbox(outlineControl, function () {
+      outlined = !outlined
+      setCheckbox(outlineControl, outlined)
+      outlineRow.hidden = !outlined
+      outlineColorRow.hidden = !outlined
+      updatePreview()
+    })
+    outlineColorRow.querySelector('.openvk-wallpaper-color-choose').addEventListener('click', function () {
+      var theme = themes.filter(function (item) { return item.id === selectedTheme })[0] || themes[0]
+      openColorDialog({
+        color: chosenOutlineColor || (theme.dark ? '#000000' : '#FFFFFF'),
+        title: wallpaperWords.outlineColor,
+        onSave: function (color) { chosenOutlineColor = color; updatePreview() }
+      })
+    })
+    outlineAutoButton.addEventListener('click', function () { chosenOutlineColor = ''; updatePreview() })
+    outlineInput.addEventListener('input', function () {
+      outlineStrength = Number(this.value)
+      outlineRow.querySelector('output').textContent = outlineStrength + '%'
+      updatePreview()
+    })
+    brightnessInput.addEventListener('input', function () {
+      brightness = Number(this.value)
+      overlay.querySelector('.openvk-wallpaper-brightness output').textContent = brightness + '%'
+      updatePreview()
+    })
+    function close() {
+      overlay.remove()
+      document.removeEventListener('keydown', onKey)
+    }
+    function onKey(event) {
+      if (event.key === 'Escape' && !document.querySelector('.openvk-color-overlay:not(.openvk-wallpaper-overlay)')) close()
+    }
+    document.addEventListener('keydown', onKey)
+    overlay.addEventListener('click', function (event) { if (event.target === overlay) close() })
+    overlay.querySelector('[data-action="cancel"]').addEventListener('click', close)
+    overlay.querySelector('[data-action="apply"]').addEventListener('click', function () {
+      try {
+        if (!existing) {
+          var fs = require('fs')
+          var path = require('path')
+          var userData = require('electron').remote.app.getPath('userData')
+          var extension = (path.extname(filePath).toLowerCase().match(/^\.(png|jpe?g|webp|gif|bmp)$/) || [])[0] || '.png'
+          var target = path.join(userData, 'chat-wallpaper' + extension)
+          fs.writeFileSync(target, fs.readFileSync(filePath))
+          wallpaper.path = target
+          wallpaper.revision = Date.now()
+        }
+        wallpaper.blur = blurred
+        wallpaper.brightness = brightness
+        wallpaper.outline = outlined
+        wallpaper.outlineStrength = outlineStrength
+        wallpaper.outlineColor = chosenOutlineColor
+        localStorage.setItem(WALLPAPER_KEY, JSON.stringify(wallpaper))
+        applyWallpaper()
+        close()
+      } catch (error) { window.alert(wallpaperWords.missing + ': ' + error.message) }
+    })
+    updatePreview()
   }
 
   function clamp(value, min, max) { return Math.min(max, Math.max(min, value)) }
@@ -368,18 +605,19 @@
     return match ? [parseInt(match[1].slice(0, 2), 16), parseInt(match[1].slice(2, 4), 16), parseInt(match[1].slice(4, 6), 16)] : null
   }
 
-  function openColorDialog() {
-    var existing = document.querySelector('.openvk-color-overlay')
+  function openColorDialog(options) {
+    var existing = document.querySelector('.openvk-color-overlay:not(.openvk-wallpaper-overlay)')
     if (existing) existing.remove()
-    var start = prefs.accentId === 'custom' ? prefs.customColor : currentAccent()
+    var start = options && /^#[0-9a-f]{6}$/i.test(options.color || '') ? options.color : prefs.accentId === 'custom' ? prefs.customColor : currentAccent()
+    var title = options && options.title ? options.title : words.choose
     var rgb = hexToRgb(start) || [81, 129, 184]
     var hsl = rgbToHsl(rgb[0], rgb[1], rgb[2])
     var h = hsl[0], s = hsl[1], l = hsl[2]
     var overlay = document.createElement('div')
     overlay.className = 'openvk-color-overlay'
     overlay.innerHTML = '<section class="openvk-color-dialog" role="dialog" aria-modal="true" aria-labelledby="openvk-color-title">' +
-      '<h2 id="openvk-color-title">' + words.choose + '</h2>' +
-      '<div class="openvk-color-picker-layout"><div><div class="openvk-color-plane" role="slider" tabindex="0" aria-label="' + words.choose + '"></div>' +
+      '<h2 id="openvk-color-title">' + title + '</h2>' +
+      '<div class="openvk-color-picker-layout"><div><div class="openvk-color-plane" role="slider" tabindex="0" aria-label="' + title + '"></div>' +
       '<label class="openvk-lightness-row">' + words.lightness + '<input type="range" min="0" max="100" value="' + l + '" data-field="lightness"></label></div>' +
       '<div class="openvk-color-picker-controls"><span class="openvk-current-preview"><span data-preview="new"></span><span data-preview="old"></span></span>' +
       '<div class="openvk-color-fields"><label class="openvk-color-field">H<input type="number" min="0" max="360" data-field="h"></label><label class="openvk-color-field">S<input type="number" min="0" max="100" data-field="s"></label><label class="openvk-color-field">L<input type="number" min="0" max="100" data-field="l"></label></div>' +
@@ -444,21 +682,23 @@
     })
     function close() {
       overlay.remove()
-      applyTheme()
+      document.removeEventListener('keydown', onKey)
+      if (!options) applyTheme()
     }
     overlay.querySelector('[data-action="cancel"]').addEventListener('click', close)
     overlay.querySelector('[data-action="save"]').addEventListener('click', function () {
-      prefs.accentId = 'custom'
-      prefs.customColor = chosenColor()
-      prefs.accent = prefs.customColor
-      savePrefs()
+      if (options && options.onSave) options.onSave(chosenColor())
+      else {
+        prefs.accentId = 'custom'
+        prefs.customColor = chosenColor()
+        prefs.accent = prefs.customColor
+        savePrefs()
+      }
       close()
     })
     overlay.addEventListener('click', function (e) { if (e.target === overlay) close() })
-    document.addEventListener('keydown', function onKey(e) {
-      if (!document.body.contains(overlay)) return document.removeEventListener('keydown', onKey)
-      if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey) }
-    })
+    function onKey(e) { if (e.key === 'Escape') close() }
+    document.addEventListener('keydown', onKey)
     updateFields()
   }
 
@@ -476,8 +716,9 @@
       window.OpenVKSettingsController.setNotificationsSetting('nt7', true)
     }
     applyTheme()
-    new MutationObserver(attach).observe(document.getElementById('react-root') || document.body, { childList: true, subtree: true })
+    new MutationObserver(function () { attach(); applyWallpaper() }).observe(document.getElementById('react-root') || document.body, { childList: true, subtree: true })
     attach()
+    applyWallpaper()
   }
 
   window.OpenVKAppearance = {

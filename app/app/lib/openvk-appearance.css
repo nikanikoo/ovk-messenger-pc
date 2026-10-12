@@ -44,6 +44,16 @@
   font-weight: 500;
 }
 
+body.openvk-theme-tinted .im_attach_video_views,
+body.openvk-theme-tinted .im_info_attach_video_views {
+  color: #bcc7d5;
+}
+
+body.openvk-theme-night .im_attach_video_views,
+body.openvk-theme-night .im_info_attach_video_views {
+  color: #c2c2c2;
+}
+
 .openvk-theme-grid {
   display: flex;
   flex-wrap: nowrap;
@@ -330,6 +340,261 @@
 .openvk-color-actions button.-primary {
   background: var(--ovk-accent, #5181b8);
   color: #fff;
+}
+
+.im_dialog_messages.openvk-wallpaper-active,
+.im_right_empty.openvk-wallpaper-active,
+.openvk-wallpaper-thumb.openvk-wallpaper-active {
+  isolation: isolate;
+}
+
+.im_dialog_messages.openvk-wallpaper-active::before,
+.im_right_empty.openvk-wallpaper-active::before,
+.openvk-wallpaper-thumb.openvk-wallpaper-active::before {
+  position: absolute;
+  z-index: -1;
+  top: -10px;
+  right: -10px;
+  bottom: -10px;
+  left: -10px;
+  background-image: var(--openvk-wallpaper-image);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: brightness(var(--openvk-wallpaper-brightness, 100%));
+  content: "";
+  pointer-events: none;
+}
+
+.im_dialog_messages.openvk-wallpaper-tiled::before,
+.im_right_empty.openvk-wallpaper-tiled::before,
+.openvk-wallpaper-thumb.openvk-wallpaper-tiled::before {
+  background-position: left top;
+  background-size: auto;
+  background-repeat: repeat;
+}
+
+.im_dialog_messages.openvk-wallpaper-blurred::before,
+.im_right_empty.openvk-wallpaper-blurred::before,
+.openvk-wallpaper-thumb.openvk-wallpaper-blurred::before {
+  filter: brightness(var(--openvk-wallpaper-brightness, 100%)) blur(8px);
+}
+
+.im_right_empty.openvk-wallpaper-active { overflow: hidden; }
+
+.im_dialog_messages.openvk-wallpaper-active .im_dialog_message.-selected,
+.im_dialog_messages.openvk-wallpaper-active .im_dialog_message_next.-selected,
+.im_dialog_messages.openvk-wallpaper-active .im_dialog_message.-gift.-selected {
+  background-color: var(--openvk-wallpaper-selected-bg, rgba(81, 129, 184, .18));
+}
+
+.im_dialog_messages.openvk-wallpaper-active .im_dialog_message_container.-out-unread {
+  background-color: var(--openvk-wallpaper-unread-bg, rgba(81, 129, 184, .12));
+}
+
+.im_dialog_messages.openvk-wallpaper-outlined .im_dialog_message_r,
+.im_dialog_messages.openvk-wallpaper-outlined .im_dialog_message_next_container,
+.im_dialog_messages.openvk-wallpaper-outlined .im_dialog_message_name_line,
+.im_dialog_messages.openvk-wallpaper-outlined .im_dialog_message_name,
+.im_dialog_messages.openvk-wallpaper-outlined .im_dialog_message_time,
+.im_dialog_messages.openvk-wallpaper-outlined .im_dialog_message_text,
+.im_dialog_messages.openvk-wallpaper-outlined .im_fwd_messages_title,
+.im_dialog_messages.openvk-wallpaper-outlined .im_fwd_message_name_line,
+.im_dialog_messages.openvk-wallpaper-outlined .im_fwd_message_name,
+.im_dialog_messages.openvk-wallpaper-outlined .im_fwd_message_time,
+.im_dialog_messages.openvk-wallpaper-outlined .openvk-reply-title,
+.im_dialog_messages.openvk-wallpaper-outlined .im_dialog_date,
+.im_dialog_messages.openvk-wallpaper-outlined .im_dialog_messages_date_inner,
+.im_dialog_messages.openvk-wallpaper-outlined .im_attach_video_name,
+.im_dialog_messages.openvk-wallpaper-outlined .im_attach_video_views,
+.im_dialog_messages.openvk-wallpaper-outlined .im_attach_video_duration,
+.im_dialog_messages.openvk-wallpaper-outlined .im_info_attach_video_name,
+.im_dialog_messages.openvk-wallpaper-outlined .im_info_attach_video_views,
+.im_dialog_messages.openvk-wallpaper-outlined .im_info_attach_video_duration,
+.im_right_empty.openvk-wallpaper-outlined .im_right_empty_text,
+body.openvk-wallpaper-outlined .im_dialog_header_title_label,
+body.openvk-wallpaper-outlined .im_dialog_header_status_label,
+body.openvk-wallpaper-outlined .im_dialog_header_compact_title_label,
+body.openvk-wallpaper-outlined .im_dialog_header_compact_title_status,
+body.openvk-wallpaper-outlined .im_dialog_message_name,
+body.openvk-wallpaper-outlined .im_dialog_message_time,
+body.openvk-wallpaper-outlined .im_fwd_messages_title,
+body.openvk-wallpaper-outlined .im_fwd_message_name,
+body.openvk-wallpaper-outlined .im_fwd_message_time,
+body.openvk-wallpaper-outlined .openvk-reply-title,
+body.openvk-wallpaper-outlined .openvk-draft-reply .im_fwd_messages_title,
+body.openvk-wallpaper-outlined .openvk-draft-reply .im_fwd_message_name,
+body.openvk-wallpaper-outlined .openvk-draft-reply .im_fwd_message_time,
+body.openvk-wallpaper-outlined .v_video_info_title,
+body.openvk-wallpaper-outlined .v_video_info_author_line {
+  text-shadow: -1px 0 1px var(--openvk-wallpaper-text-halo),
+    1px 0 1px var(--openvk-wallpaper-text-halo),
+    0 -1px 1px var(--openvk-wallpaper-text-halo),
+    0 1px 1px var(--openvk-wallpaper-text-halo);
+}
+
+.im_dialog_messages.openvk-wallpaper-active .im_dialog_message_time,
+.im_dialog_messages.openvk-wallpaper-active .im_dialog_date,
+.im_dialog_messages.openvk-wallpaper-active .im_dialog_messages_date_inner {
+  color: var(--base-fg);
+}
+
+.openvk-wallpaper-row {
+  display: flex;
+  align-items: center;
+}
+
+.openvk-wallpaper-thumb {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex: 0 0 96px;
+  overflow: hidden;
+  border: 1px solid var(--settings-separator-bg, #d9e1ea);
+  border-radius: 4px;
+  background: var(--base-bg, #fff);
+  box-sizing: border-box;
+  padding: 0;
+  cursor: pointer;
+}
+
+.openvk-wallpaper-thumb:disabled { cursor: default; }
+
+.openvk-wallpaper-choose {
+  margin-left: 20px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--settings-separator-bg, #d9e1ea);
+  border-radius: 4px;
+  background: var(--layer-box-bg, #fff);
+  color: var(--base-fg, #222);
+  font: inherit;
+  cursor: pointer;
+}
+
+.openvk-wallpaper-remove {
+  min-height: 34px;
+  margin-left: 8px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--link-fg, #42648b);
+  font: inherit;
+  cursor: pointer;
+}
+
+.openvk-wallpaper-remove:disabled { opacity: .5; cursor: default; }
+
+.openvk-wallpaper-tile,
+.openvk-wallpaper-blur,
+.openvk-wallpaper-outline {
+  display: block;
+  width: max-content;
+  color: var(--base-fg, #222);
+  cursor: pointer;
+}
+
+.openvk-wallpaper-tile { margin-top: 12px; }
+.openvk-wallpaper-blur { margin: 12px auto 0; }
+.openvk-wallpaper-outline { margin: 4px auto 0; }
+.openvk-wallpaper-brightness,
+.openvk-wallpaper-outline-strength {
+  display: grid;
+  grid-template-columns: 130px minmax(100px, 1fr) 42px;
+  align-items: center;
+  gap: 12px;
+  margin: 15px auto 0;
+  color: var(--base-fg, #222);
+}
+.openvk-wallpaper-outline-strength[hidden] { display: none; }
+.openvk-wallpaper-brightness input,
+.openvk-wallpaper-outline-strength input { width: 100%; accent-color: var(--ovk-accent, #5181b8); }
+.openvk-wallpaper-brightness output,
+.openvk-wallpaper-outline-strength output { text-align: right; }
+
+.openvk-wallpaper-outline-color {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+}
+.openvk-wallpaper-outline-color[hidden],
+.openvk-wallpaper-color-auto[hidden] { display: none; }
+.openvk-wallpaper-color-choose {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 3px 10px;
+  border: 1px solid var(--settings-separator-bg, #d9e1ea);
+  border-radius: 4px;
+  background: var(--layer-box-bg, #fff);
+  color: var(--base-fg, #222);
+  font: inherit;
+  cursor: pointer;
+}
+.openvk-wallpaper-color-swatch {
+  display: inline-block;
+  width: 19px;
+  height: 19px;
+  margin-right: 8px;
+  border: 1px solid rgba(127, 127, 127, .5);
+  border-radius: 3px;
+}
+.openvk-wallpaper-color-auto {
+  margin-left: 8px;
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--link-fg, #42648b);
+  font: inherit;
+  cursor: pointer;
+}
+
+.openvk-wallpaper-dialog { width: 600px; }
+.openvk-wallpaper-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.openvk-wallpaper-header h2 { margin-bottom: 14px; }
+.openvk-wallpaper-theme {
+  padding: 5px 9px;
+  border: 1px solid var(--header-border, #d9e1ea);
+  border-radius: 4px;
+  background: var(--layer-box-bg, #fff);
+  color: var(--base-fg, #222);
+  font: inherit;
+  cursor: pointer;
+}
+
+.openvk-wallpaper-preview.im_dialog_messages {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 330px;
+  max-height: 48vh;
+  flex: none;
+  overflow-y: auto;
+  border: 1px solid var(--header-border, #d9e1ea);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.openvk-wallpaper-conversation { position: relative; z-index: 1; padding: 12px 0; }
+.openvk-wallpaper-preview .im_dialog_message_container { min-height: 58px; }
+.openvk-wallpaper-preview .openvk-wallpaper-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #73a4d8;
+  color: #fff;
+  font-size: 15px;
+}
+.openvk-wallpaper-preview .openvk-wallpaper-avatar.-mine { background: #779b86; }
+.openvk-wallpaper-preview .im_dialog_date {
+  display: table;
+  margin: 4px auto 12px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  background: var(--dialog-messages-date-bg, rgba(0, 0, 0, .12));
+  color: var(--dialog-messages-date-fg, var(--base-fg));
+  box-shadow: 0 1px 0 var(--dialog-messages-date-shadow, transparent);
 }
 
 @media (max-width: 430px) {
