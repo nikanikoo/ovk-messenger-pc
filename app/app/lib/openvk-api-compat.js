@@ -1,10 +1,19 @@
 (function (root) {
   "use strict";
 
+  function resolveMediaUrl(value) {
+    if (typeof value !== "string" || !value) return "";
+    if (/^https?:\/\//i.test(value)) return value;
+    var instance = root.OpenVKInstance;
+    if (value.slice(0, 2) === "//") return (instance ? instance.getScheme() : "https:") + value;
+    if (value.charAt(0) === "/" && instance && instance.isValid()) return instance.getOrigin() + value;
+    return value;
+  }
+
   function wrapApi(api) {
     function normalizeStickerUrls(value) {
       if (typeof value === "string") {
-        return value.replace(/^https?:\/\/api\.openvk\.org(?=\/)/i, "https://openvk.org");
+        return resolveMediaUrl(value);
       }
       if (Array.isArray(value)) return value.map(normalizeStickerUrls);
       if (value && typeof value === "object") {
@@ -91,7 +100,7 @@
 
       function hydrateReplies(history) {
       if (!history || !Array.isArray(history.items)) return Promise.resolve(history);
-      history.items.forEach(normalizeMessageAuthor);
+      history.items.forEach(function (item) { normalizeMessageAuthor(item); normalizeMessage(item); });
       var missing = {};
       history.items.forEach(function (item) {
         if (item && !item.reply_to && item.reply_message) {
@@ -106,7 +115,7 @@
         fields: "photo_50,photo_100,photo_200,online"
       })).then(function (data) {
         var replies = {};
-        (data.items || []).forEach(function (item) { replies[item.id] = item; });
+        (data.items || []).forEach(function (item) { normalizeMessage(item); replies[item.id] = item; });
         history.items.forEach(function (item) {
           if (item && item.reply_to && !item.reply_message && replies[item.reply_to]) {
             item.reply_message = replies[item.reply_to];
@@ -141,6 +150,7 @@
       function normalizeConversations(data) {
         if (!data) return data;
         function normalize(conversation) {
+          normalizeMessage(conversation && conversation.last_message);
           if (!conversation || !conversation.peer || conversation.peer.type !== "community") return;
           // OpenVK IM describes the channel; Messenger expects the peer kind.
           conversation.peer.type = Number(conversation.peer.id) < 0 ? "group" : "user";
@@ -148,6 +158,7 @@
         (data.items || []).forEach(function (item) {
           normalize(item.conversation || item);
           normalizeMessageAuthor(item.last_message);
+          normalizeMessage(item.last_message);
         });
         (data.conversations || []).forEach(normalize);
         return data;
@@ -233,7 +244,7 @@
             });
           }));
         }
-        if (method !== "messages.getById" && method !== "messages.getHistory") return api(method, params, options);
+        if (method !== "messages.getById" && method !== "messages.getHistory" && method !== "messages.getByConversationMessageId") return api(method, params, options);
         return finish(call(method, params).then(function (data) {
           return hydrateReplies(method === "messages.getHistory" ? normalizeHistory(data) : data);
         }));
@@ -420,25 +431,78 @@
   function normalizeVideo(video) {
     if (!video) return video;
     var images = Array.isArray(video.image) ? video.image : [];
-    function url(value) {
-      if (!value || typeof value !== "string") return "";
-      if (value.charAt(0) === "/") return "https://openvk.org" + value;
-      return value.replace(/^https?:\/\/api\.openvk\.org(?=\/)/i, "https://openvk.org");
-    }
     function closest(width) {
       var best = null;
       images.forEach(function (image) {
         if (!image || !image.url) return;
         if (!best || Math.abs(Number(image.width) - width) < Math.abs(Number(best.width) - width)) best = image;
       });
-      return best ? url(best.url) : "";
+      return best ? resolveMediaUrl(best.url) : "";
     }
-    var fallback = url(video.image_medium || (typeof video.image === "string" ? video.image : ""));
-    video.photo_130 = url(video.photo_130) || closest(130) || fallback;
-    video.photo_320 = url(video.photo_320) || closest(320) || video.photo_130 || fallback;
-    video.photo_640 = url(video.photo_640) || video.photo_320;
-    video.photo_800 = url(video.photo_800) || video.photo_640;
+    var fallback = resolveMediaUrl(video.image_medium || (typeof video.image === "string" ? video.image : ""));
+    video.photo_130 = resolveMediaUrl(video.photo_130) || closest(130) || fallback;
+    video.photo_320 = resolveMediaUrl(video.photo_320) || closest(320) || video.photo_130 || fallback;
+    video.photo_640 = resolveMediaUrl(video.photo_640) || video.photo_320;
+    video.photo_800 = resolveMediaUrl(video.photo_800) || video.photo_640;
     return video;
+  }
+
+  function normalizePhoto(photo) {
+    if (!photo || typeof photo !== "object") return;
+    var sizes = Array.isArray(photo.sizes) ? photo.sizes :
+      photo.sizes && typeof photo.sizes === "object" ? Object.keys(photo.sizes).map(function (key) {
+        var size = photo.sizes[key];
+        if (size && !size.type) size.type = key;
+        return size;
+      }) : [];
+    sizes = sizes.filter(function (size) {
+      if (!size) return false;
+      size.url = resolveMediaUrl(size.url || size.src);
+      if (!size.url) return false;
+      size.width = Number(size.width) || Number(photo.width) || 604;
+      size.height = Number(size.height) || Number(photo.height) || 604;
+      return true;
+    });
+    if (!sizes.length) {
+      var width = Number(photo.width || (photo.orig_photo && photo.orig_photo.width)) || 0;
+      var height = Number(photo.height || (photo.orig_photo && photo.orig_photo.height)) || 0;
+      [
+        ["s", photo.photo_75 || photo.src_small, 75],
+        ["m", photo.photo_130 || photo.src, 130],
+        ["x", photo.photo_604 || photo.src_big, 604],
+        ["y", photo.photo_807 || photo.src_xbig, 807],
+        ["z", photo.photo_1280 || photo.src_xxbig, 1280],
+        ["w", photo.photo_2560 || photo.src_xxxbig || photo.src_original || photo.url || (photo.orig_photo && photo.orig_photo.url), 2560]
+      ].forEach(function (entry) {
+        if (typeof entry[1] !== "string" || !entry[1]) return;
+        var scale = width && height ? Math.min(1, entry[2] / Math.max(width, height)) : 1;
+        sizes.push({
+          type: entry[0],
+          url: resolveMediaUrl(entry[1]),
+          width: width ? Math.max(1, Math.round(width * scale)) : entry[2],
+          height: height ? Math.max(1, Math.round(height * scale)) : entry[2]
+        });
+      });
+    }
+    if (sizes.length) photo.sizes = sizes;
+  }
+
+  function normalizeMessage(message) {
+    if (!message || typeof message !== "object") return;
+    if (Array.isArray(message.attachments)) message.attachments.forEach(function (attachment) {
+      if (attachment && attachment.type === "photo") normalizePhoto(attachment.photo);
+    });
+    if (Array.isArray(message.fwd_messages)) message.fwd_messages.forEach(normalizeMessage);
+    normalizeMessage(message.reply_message);
+  }
+
+  function inheritContent(target, source) {
+    if (!target || !source) return target;
+    if ((!target.attachments || !target.attachments.length) && source.attachments && source.attachments.length) {
+      target.attachments = source.attachments;
+    }
+    if (!target.text && source.text) target.text = source.text;
+    return target;
   }
 
   function applyReply(message, raw, ForwardMessage) {
@@ -498,5 +562,5 @@
       React.createElement("div", { className: "im_dialog_message_text" }, reply.text || "")));
   }
 
-  root.OpenVKCompat = { wrapApi: wrapApi, normalizeLongPoll: normalizeLongPoll, normalizeVideo: normalizeVideo, applyReply: applyReply, inheritReply: inheritReply, renderReply: renderReply };
+  root.OpenVKCompat = { wrapApi: wrapApi, normalizeLongPoll: normalizeLongPoll, normalizeVideo: normalizeVideo, normalizePhoto: normalizePhoto, normalizeMessage: normalizeMessage, applyReply: applyReply, inheritReply: inheritReply, inheritContent: inheritContent, renderReply: renderReply };
 })(window);

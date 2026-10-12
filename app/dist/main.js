@@ -8330,7 +8330,7 @@ module.exports = function(e) {
               c = s.getLastMessageId();
             if (r.id && s.messageIds.includes(r.id)) {
               var d = s.getMessageById(r.id);
-              return window.OpenVKCompat.inheritReply(r, d), (d.fwdLoading || d.attachments.length != r.attachments.length || d.time != r.time || d.text != r.text || d.replyTo != r.replyTo) && (s.replaceMessage(r.id, r), d.adminAuthorId == r.adminAuthorId || r.adminAuthorId || (r.adminAuthorId = d.adminAuthorId)), l && e.change("messages", {
+              return window.OpenVKCompat.inheritReply(r, d), window.OpenVKCompat.inheritContent(r, d), (d.fwdLoading || d.attachments.length != r.attachments.length || d.time != r.time || d.text != r.text || d.replyTo != r.replyTo) && (s.replaceMessage(r.id, r), s.updatePhotosList(), d.adminAuthorId == r.adminAuthorId || r.adminAuthorId || (r.adminAuthorId = d.adminAuthorId)), l && e.change("messages", {
                 ids: [r.id],
                 rerender: !0,
                 groupId: n
@@ -24008,23 +24008,12 @@ module.exports = function(e) {
             n = _.PhotoAttachment.GetBestQuality(e.sizes);
           if (!n) return void loge("[ViewerController download] best not found", e);
           var o = c.default.getCurrentPhotoId(),
-            r = document.querySelector("img.v_image_img"),
-            i = void 0,
-            a = void 0;
-          if (a = e.doc ? (0, g.getExtension)(e.name) : (0, g.getExtension)(r.src), a = a.toLowerCase(), r && r.complete && 0 != r.naturalHeight && ["png", "jpg"].includes(a)) {
-            var s = document.createElement("canvas");
-            s.width = r.naturalWidth, s.height = r.naturalHeight;
-            s.getContext("2d").drawImage(r, 0, 0);
-            var u = (0, g.getExtension)(r.src);
-            i = s.toDataURL("image/" + u)
-          }
-          var l = {
-            name: "save_file",
-            url: n.url,
-            path: t,
-            format: a
-          };
-          i && (l.dataURL = i), e.doc && (l.fileName = e.name), (0, m.dispatch)("downloading_started"), E.call(l).then(function(e) {
+            l = {
+              name: "save_file",
+              url: n.url,
+              path: t
+            };
+          e.doc && (l.fileName = e.name), (0, m.dispatch)("downloading_started"), E.call(l).then(function(e) {
             !1 === e ? (0, m.dispatch)("downloading_error", {
               id: o
             }) : "string" == typeof e && (0, m.dispatch)("downloading_finished", {
