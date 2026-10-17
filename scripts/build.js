@@ -223,7 +223,7 @@ async function main() {
     executableName: platform === 'win32' ? 'ovk' : 'OpenVK',
     icon: platform === 'win32' ? path.join(assets, 'tray.ico') : undefined,
     extraResource: platform === 'darwin' ? extras.map(file => path.join(assets, file)) : [],
-    appVersion: '26.0.1'
+    appVersion: require(path.join(stage, 'package.json')).version
   })
   if (platform !== 'darwin') {
     for (const output of outputs) {
