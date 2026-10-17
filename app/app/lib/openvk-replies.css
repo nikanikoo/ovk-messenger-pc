@@ -1,15 +1,82 @@
-.openvk-message-reply .im_fwd_message {
-  padding-top: 5px;
+/* Compact reply layout from VK Messenger 4.1, using the active 3.9 palette. */
+.im_message_reply {
+  height: 40px;
+  margin: 5px 0;
+  width: 100%;
+  cursor: pointer;
 }
 
-.openvk-reply-title {
-  margin: 10px 0 0 12px;
+.im_message_reply_line {
+  width: 2px;
+  height: 40px;
+  border-radius: 1px;
+  float: left;
+  background: var(--dialog-forwarded-line, var(--user-name-fg));
+}
+
+.im_message_reply_right {
+  margin-left: 13px;
+  height: 40px;
+  overflow: hidden;
+}
+
+.im_message_reply_title {
+  color: var(--user-name-fg);
+  font-size: 13px;
+  padding-top: 1px;
+}
+
+.im_message_reply_img {
+  float: left;
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.im_message_reply_text {
+  font-size: 13px;
+  color: var(--base-fg);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding-top: 1px;
+}
+
+.im_message_reply_text.-attaches {
+  color: var(--darkgray-fg);
+}
+
+body.-large_font .im_message_reply_title,
+body.-large_font .im_message_reply_text {
+  font-size: 15px;
+  padding-top: 0;
+}
+
+.im_message_reply:focus {
+  outline: 1px solid var(--user-name-fg);
+  outline-offset: 2px;
 }
 
 .openvk-draft-reply {
-  min-width: 200px;
+  position: relative;
+  width: 240px;
+  max-width: 100%;
+  padding-right: 28px;
+  box-sizing: border-box;
+  cursor: default;
 }
 
-.openvk-draft-reply .im_fwd_messages_title {
-  margin-bottom: 3px;
+.openvk-reply-remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 28px;
+  height: 40px;
+  margin: 0;
+  float: none;
+  border: 0;
+  padding: 0;
+  background-color: var(--base-icon);
 }
