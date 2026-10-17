@@ -44,6 +44,102 @@
   font-weight: 500;
 }
 
+.settings_header .openvk-theme-menu {
+  position: absolute;
+  z-index: 30;
+  top: 14px;
+  right: 64px;
+  font: inherit;
+}
+
+.openvk-theme-menu-trigger {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--layer-box-close-icon, var(--base-fg));
+  font-size: 25px;
+  line-height: 22px;
+  cursor: pointer;
+}
+
+.openvk-theme-menu-trigger:hover {
+  color: var(--layer-box-close-icon-hover, var(--layer-box-close-icon, var(--base-fg)));
+  background: var(--context-menu-item-hover-bg, rgba(127, 127, 127, .12));
+}
+
+.openvk-theme-choice-dialog {
+  width: 410px;
+}
+
+.openvk-theme-choice-import {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--context-menu-border, #ddd);
+  border-radius: 5px;
+  background: var(--context-menu-bg, #fff);
+  color: var(--base-fg, #222);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.openvk-theme-choice-import:hover {
+  background: var(--context-menu-item-hover-bg, rgba(127, 127, 127, .12));
+}
+
+.openvk-theme-context-menu {
+  position: fixed;
+  z-index: 60000;
+  min-width: 150px;
+  padding: 5px;
+  border: 1px solid var(--context-menu-border, #ddd);
+  border-radius: 5px;
+  background: var(--context-menu-bg, #fff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+  box-sizing: border-box;
+}
+
+.openvk-theme-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--base-fg, #222);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.openvk-theme-context-menu button:hover {
+  background: var(--context-menu-item-hover-bg, rgba(127, 127, 127, .12));
+  color: var(--openvk-theme-context-hover-fg, var(--base-fg, #222));
+}
+
+.openvk-rename-theme-dialog { width: 410px; }
+
+.openvk-rename-theme-dialog input {
+  width: 100%;
+  height: 36px;
+  padding: 7px 9px;
+  border: 1px solid var(--input-border, var(--header-border, #ccc));
+  border-radius: 4px;
+  background: var(--input-bg, #fff);
+  color: var(--base-fg, #222);
+  box-sizing: border-box;
+  font: inherit;
+}
+
+body.openvk-theme-telegram .checkbox.-checked > .checkbox_icon > .checkbox_icon_icon {
+  background-color: var(--openvk-check-fg, #fff);
+}
+
 body.openvk-theme-tinted .im_attach_video_views,
 body.openvk-theme-tinted .im_info_attach_video_views {
   color: #bcc7d5;
@@ -57,9 +153,12 @@ body.openvk-theme-night .im_info_attach_video_views {
 .openvk-theme-grid {
   display: flex;
   flex-wrap: nowrap;
-  justify-content: center;
+  justify-content: flex-start;
   overflow-x: auto;
 }
+
+.openvk-theme-option:first-child { margin-left: auto; }
+.openvk-theme-option:last-child { margin-right: auto; }
 
 .openvk-theme-option + .openvk-theme-option {
   margin-left: 18px;
@@ -113,11 +212,13 @@ body.openvk-theme-night .im_info_attach_video_views {
   width: 19px;
   height: 19px;
   margin-left: -9px;
+  box-sizing: border-box;
+  border: 1px solid var(--openvk-check-fg, #fff);
   border-radius: 50%;
   background: var(--ovk-accent, #5181b8);
-  color: #fff;
+  color: var(--openvk-check-fg, #fff);
   font-size: 12px;
-  line-height: 19px;
+  line-height: 17px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, .22);
 }
 
@@ -142,6 +243,11 @@ body.openvk-theme-night .im_info_attach_video_views {
   color: var(--base-fg);
   font-size: 15px;
   font-weight: 500;
+}
+
+.openvk-telegram-active .openvk-accent-heading:first-of-type,
+.openvk-telegram-active .openvk-accent-list {
+  display: none;
 }
 
 .openvk-accent-list {
