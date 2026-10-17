@@ -3827,7 +3827,7 @@ module.exports = function(e) {
                 height: e.height
               }))
             }).catch(function(e) {
-              loge("[Image loadImage]", e)
+              loge("[Image loadImage]", e), n.props.onError && n.props.onError(e)
             })
           }, n.state = {
             loaded: !1
@@ -56456,22 +56456,37 @@ module.exports = function(e) {
           n.setState({
             animReady: !0
           }, function() {
-            n.refs.animContainer.show(), n.lottie.play()
-          }), n.animPlaying = !0
-        }, n.onAnimComplete = function() {
-          n.animPlaying = !1, n.lottie.stop()
-        }, n.onImageMouseEnter = function() {
-          n.lottie || n.initAnimation()
-        }, n.onAnimMouseEnter = function() {
-          n.state.animReady && !n.animPlaying && n.lottie.play()
+            n.refs.animContainer.show(), n.updateAnimationVisibility()
+          })
+        }, n.onImageLoadError = function() {
+          n.updateAnimationVisibility()
+        }, n.onIntersection = function(e) {
+          n.inViewport = e[0].intersectionRatio > 0, n.updateAnimationVisibility()
+        }, n.checkViewport = function() {
+          var e = n.refs.stickerRoot.getBoundingClientRect();
+          n.inViewport = e.width > 0 && e.height > 0 && e.top < window.innerHeight && e.bottom > 0 && e.left < window.innerWidth && e.right > 0, n.updateAnimationVisibility()
+        }, n.updateAnimationVisibility = function() {
+          if (!n.props.sticker.isAnimation()) return;
+          if (n.inViewport && !document.hidden) {
+            n.lottie || n.initAnimation();
+            n.state.animReady && !n.animPlaying && (n.lottie.play(), n.animPlaying = !0)
+          } else n.lottie && n.animPlaying && (n.lottie.pause(), n.animPlaying = !1)
         }, n.state = {
           animReady: !1
-        }, n.animPlaying = !1, n.lottie = null, n
+        }, n.animPlaying = !1, n.inViewport = !1, n.lottie = null, n.observer = null, n.visibilityTimer = null, n
       }
       return a(t, e), c(t, [{
+        key: "componentDidMount",
+        value: function() {
+          if (!this.props.sticker.isAnimation()) return;
+          document.addEventListener("visibilitychange", this.updateAnimationVisibility);
+          if (window.IntersectionObserver) this.observer = new IntersectionObserver(this.onIntersection), this.observer.observe(this.refs.stickerRoot);
+          else window.addEventListener("scroll", this.checkViewport, !0), window.addEventListener("resize", this.checkViewport), this.visibilityTimer = setInterval(this.checkViewport, 500), this.checkViewport()
+        }
+      }, {
         key: "componentWillUnmount",
         value: function() {
-          this.lottie && (this.lottie.removeEventListener("data_ready", this.onAnimDataReady), this.lottie.removeEventListener("complete", this.onAnimComplete), this.lottie.destroy())
+          document.removeEventListener("visibilitychange", this.updateAnimationVisibility), this.observer && this.observer.disconnect(), this.visibilityTimer && clearInterval(this.visibilityTimer), window.removeEventListener("scroll", this.checkViewport, !0), window.removeEventListener("resize", this.checkViewport), this.lottie && (this.lottie.removeEventListener("data_ready", this.onAnimDataReady), this.lottie.destroy())
         }
       }, {
         key: "shouldComponentUpdate",
@@ -56485,10 +56500,10 @@ module.exports = function(e) {
           this.lottie = v.default.loadAnimation({
             container: this.refs.animContainer.getNode(),
             renderer: "svg",
-            loop: !1,
+            loop: !0,
             autoplay: !1,
             path: e.animationUrl
-          }), this.lottie.addEventListener("data_ready", this.onAnimDataReady), this.lottie.addEventListener("complete", this.onAnimComplete)
+          }), this.lottie.addEventListener("data_ready", this.onAnimDataReady)
         }
       }, {
         key: "render",
@@ -56503,8 +56518,9 @@ module.exports = function(e) {
             a = {};
           return t.isAnimation() && (this.state.animReady && (a.style = {
             display: "none"
-          }), a.onMouseEnter = this.onImageMouseEnter), f.default.createElement("div", {
-            className: n
+          }), a.onError = this.onImageLoadError), f.default.createElement("div", {
+            className: n,
+            ref: "stickerRoot"
           }, f.default.createElement(g.default, l({
             cacheKey: "sticker" + t.stickerId + "_" + o,
             src: i,
@@ -56513,8 +56529,7 @@ module.exports = function(e) {
             loadingBackgroundColor: this.props.imageLoadingBackgroundColor
           }, a)), t.isAnimation() ? f.default.createElement(h.default, {
             ref: "animContainer",
-            height: o,
-            onMouseEnter: this.onAnimMouseEnter
+            height: o
           }) : null)
         }
       }]), t
@@ -112995,7 +113010,10 @@ module.exports = function(e) {
         function e(e, t, n) {
           var o, r, i, a, s, u, l, c, d, f = n.lastIndex;
           if (e < this.keyframes[0].t - this.offsetTime) o = this.keyframes[0].s[0], i = !0, f = 0;
-          else if (e >= this.keyframes[this.keyframes.length - 1].t - this.offsetTime) o = 1 === this.keyframes[this.keyframes.length - 2].h ? this.keyframes[this.keyframes.length - 1].s[0] : this.keyframes[this.keyframes.length - 2].e[0], i = !0;
+          else if (e >= this.keyframes[this.keyframes.length - 1].t - this.offsetTime) {
+            var previousKeyframe = this.keyframes[this.keyframes.length - 2], finalKeyframe = this.keyframes[this.keyframes.length - 1];
+            o = 1 === previousKeyframe.h || !previousKeyframe.e || !previousKeyframe.e[0] ? finalKeyframe.s[0] : previousKeyframe.e[0], i = !0;
+          }
           else {
             for (var p, h, m = f, g = this.keyframes.length - 1, _ = !0; _ && (p = this.keyframes[m], h = this.keyframes[m + 1], !(h.t - this.offsetTime > e));) m < g - 1 ? m += 1 : _ = !1;
             if (i = 1 === p.h, f = m, !i) {
@@ -113005,7 +113023,7 @@ module.exports = function(e) {
                 var v;
                 p.__fnct ? v = p.__fnct : (v = BezierFactory.getBezierEasing(p.o.x, p.o.y, p.i.x, p.i.y).get, p.__fnct = v), c = v((e - (p.t - this.offsetTime)) / (h.t - this.offsetTime - (p.t - this.offsetTime)))
               }
-              r = p.e[0]
+              r = p.e && p.e[0] ? p.e[0] : h.s[0]
             }
             o = p.s[0]
           }
@@ -113523,6 +113541,7 @@ module.exports = function(e) {
 
         function t(e) {
           var t = "";
+          if (/^data:image\//i.test(e.p)) return e.p;
           if (this.assetsPath) {
             var n = e.p; - 1 !== n.indexOf("images/") && (n = n.split("/")[1]), t = this.assetsPath + n
           } else t = this.path, t += e.u ? e.u : "", t += e.p;
@@ -114905,6 +114924,16 @@ module.exports = function(e) {
           E = !0;
         return y.registerAnimation = t, y.loadAnimation = i, y.setSpeed = a, y.setDirection = s, y.play = u, y.pause = d, y.stop = p, y.togglePause = h, y.searchAnimations = g, y.resize = _, y.goToAndStop = f, y.destroy = m, y
       }(),
+      fillMissingKeyframeEnds = function(value) {
+        if (!value || "object" != typeof value) return;
+        if (!Array.isArray(value) && 1 === value.a && Array.isArray(value.k)) {
+          for (var i = 0; i < value.k.length - 1; i++) {
+            var current = value.k[i], next = value.k[i + 1];
+            if (current && next && current.s && next.s && (!current.e || !current.e.length)) current.e = JSON.parse(JSON.stringify(next.s))
+          }
+        }
+        for (var key in value) Object.prototype.hasOwnProperty.call(value, key) && fillMissingKeyframeEnds(value[key])
+      },
       AnimationItem = function() {
         this._cbs = [], this.name = "", this.path = "", this.isLoaded = !1, this.currentFrame = 0, this.currentRawFrame = 0, this.totalFrames = 0, this.frameRate = 0, this.frameMult = 0, this.playSpeed = 1, this.playDirection = 1, this.pendingElements = 0, this.playCount = 0, this.animationData = {}, this.layers = [], this.assets = [], this.isPaused = !0, this.autoplay = !1, this.loop = !0, this.renderer = null, this.animationID = randomString(10), this.assetsPath = "", this.timeCompleted = 0, this.segmentPos = 0, this.subframeEnabled = subframeEnabled, this.segments = [], this._idle = !0, this.projectInterface = ProjectInterface()
       };
@@ -114946,6 +114975,7 @@ module.exports = function(e) {
       var i = o.getNamedItem("data-anim-autoplay") ? o.getNamedItem("data-anim-autoplay").value : o.getNamedItem("data-bm-autoplay") ? o.getNamedItem("data-bm-autoplay").value : !o.getNamedItem("bm-autoplay") || o.getNamedItem("bm-autoplay").value;
       n.autoplay = "false" !== i, n.name = o.getNamedItem("data-name") ? o.getNamedItem("data-name").value : o.getNamedItem("data-bm-name") ? o.getNamedItem("data-bm-name").value : o.getNamedItem("bm-name") ? o.getNamedItem("bm-name").value : "", "false" === (o.getNamedItem("data-anim-prerender") ? o.getNamedItem("data-anim-prerender").value : o.getNamedItem("data-bm-prerender") ? o.getNamedItem("data-bm-prerender").value : o.getNamedItem("bm-prerender") ? o.getNamedItem("bm-prerender").value : "") && (n.prerender = !1), this.setParams(n)
     }, AnimationItem.prototype.includeLayers = function(e) {
+      fillMissingKeyframeEnds(e);
       e.op > this.animationData.op && (this.animationData.op = e.op, this.totalFrames = Math.floor(e.op - this.animationData.ip), this.animationData.tf = this.totalFrames);
       var t, n, o = this.animationData.layers,
         r = o.length,
@@ -114982,7 +115012,7 @@ module.exports = function(e) {
       this.animationData.segments || (this.timeCompleted = this.animationData.tf), this.loadNextSegment()
     }, AnimationItem.prototype.configAnimation = function(e) {
       var t = this;
-      this.renderer && this.renderer.destroyed || (this.animationData = e, this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip), this.animationData.tf = this.totalFrames, this.renderer.configAnimation(e), e.assets || (e.assets = []), e.comps && (e.assets = e.assets.concat(e.comps), e.comps = null), this.renderer.searchExtraCompositions(e.assets), this.layers = this.animationData.layers, this.assets = this.animationData.assets, this.frameRate = this.animationData.fr, this.firstFrame = Math.round(this.animationData.ip), this.frameMult = this.animationData.fr / 1e3, this.trigger("config_ready"), this.imagePreloader = new ImagePreloader, this.imagePreloader.setAssetsPath(this.assetsPath), this.imagePreloader.setPath(this.path), this.imagePreloader.loadAssets(e.assets, function(e) {
+      this.renderer && this.renderer.destroyed || (fillMissingKeyframeEnds(e), this.animationData = e, this.totalFrames = Math.floor(this.animationData.op - this.animationData.ip), this.animationData.tf = this.totalFrames, this.renderer.configAnimation(e), e.assets || (e.assets = []), e.comps && (e.assets = e.assets.concat(e.comps), e.comps = null), this.renderer.searchExtraCompositions(e.assets), this.layers = this.animationData.layers, this.assets = this.animationData.assets, this.frameRate = this.animationData.fr, this.firstFrame = Math.round(this.animationData.ip), this.frameMult = this.animationData.fr / 1e3, this.trigger("config_ready"), this.imagePreloader = new ImagePreloader, this.imagePreloader.setAssetsPath(this.assetsPath), this.imagePreloader.setPath(this.path), this.imagePreloader.loadAssets(e.assets, function(e) {
         e || t.trigger("loaded_images")
       }), this.loadSegments(), this.updaFrameModifier(), this.renderer.globalData.fontManager ? this.waitForFontsLoaded() : (dataManager.completeData(this.animationData, this.renderer.globalData.fontManager), this.checkLoaded()))
     }, AnimationItem.prototype.waitForFontsLoaded = function() {
@@ -115057,6 +115087,7 @@ module.exports = function(e) {
       return this.path
     }, AnimationItem.prototype.getAssetsPath = function(e) {
       var t = "";
+      if (/^data:image\//i.test(e.p)) return e.p;
       if (this.assetsPath) {
         var n = e.p; - 1 !== n.indexOf("images/") && (n = n.split("/")[1]), t = this.assetsPath + n
       } else t = this.path, t += e.u ? e.u : "", t += e.p;

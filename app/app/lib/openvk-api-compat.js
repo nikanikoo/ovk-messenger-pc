@@ -22,6 +22,40 @@
       return value;
     }
 
+    function normalizeStickerPack(pack) {
+      var packId = pack.id || pack.product_id;
+      pack.stickers = (pack.stickers || []).map(function (sticker) {
+        var stickerId = sticker.sticker_id || sticker.id;
+        sticker.product_id = sticker.product_id || packId;
+        sticker.sticker_id = stickerId;
+        sticker.images = sticker.images || [];
+        sticker.images_with_background = sticker.images_with_background || sticker.images;
+
+        function fixImageUrl(image) {
+          if (image.url && /\/images\/stickers\//i.test(image.url) && packId && stickerId) {
+            var size = image.height || image.width || 128;
+            image.url = "/sticker/" + packId + "/" + stickerId + "_" + size + (size >= 512 ? ".png" : ".webp");
+          }
+          return image;
+        }
+        sticker.images = sticker.images.map(fixImageUrl);
+        sticker.images_with_background = sticker.images_with_background.map(fixImageUrl);
+
+        if (!sticker.animation_url && sticker.animations && sticker.animations.length) {
+          sticker.animation_url = sticker.animations[0].url;
+        }
+        if (!sticker.animation_url && sticker.is_animated && sticker.photo_128 && /\.json(?:[?#]|$)/i.test(sticker.photo_128)) {
+          sticker.animation_url = sticker.photo_128;
+        }
+        if (!sticker.animation_url && (sticker.is_animated || pack.is_animated || pack.has_animation) && packId && stickerId) {
+          sticker.animation_url = "/sticker/" + packId + "/" + stickerId + "_512.json";
+        }
+        if (sticker.animation_url) sticker.is_animated = true;
+        return sticker;
+      });
+      return pack;
+    }
+
     function request(method, params, options) {
       var pending = [];
       var cancelled = false;
@@ -275,13 +309,7 @@
           var packs = values[0];
           packs.items = (packs.items || []).map(function (pack) {
             pack.active = 1;
-            pack.stickers = (pack.stickers || []).map(function (sticker) {
-              sticker.product_id = pack.id;
-              sticker.images = sticker.images || [];
-              sticker.images_with_background = sticker.images_with_background || sticker.images;
-              return sticker;
-            });
-            return pack;
+            return normalizeStickerPack(pack);
           });
           return { stickers: normalizeStickerUrls(packs), keywords: normalizeStickerUrls(values[1]) };
         });
