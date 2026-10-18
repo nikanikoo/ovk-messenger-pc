@@ -51393,7 +51393,7 @@ module.exports = function(e) {
             }, "•"), " ", n))
           } else r += " -show";
           return d.default.createElement("div", {
-            className: "im_attach_doc",
+            className: "im_attach_doc -image",
             onClick: this.onClick
           }, d.default.createElement("img", {
             className: r,
