@@ -533,62 +533,30 @@
     return target;
   }
 
-  function applyReply(message, raw, ForwardMessage) {
+  function applyReply(message, raw, Message) {
     if (!message || !message.replyMessage) return;
     if (!message.replyTo) {
       message.replyTo = message.replyMessage.id || message.replyMessage.origId || null;
     }
     if (!message.replyTo) return;
-    var reply = message.replyMessage;
-    var forwarded;
-    if (typeof reply.toFwdMessageObject === "function") {
-      forwarded = reply.toFwdMessageObject();
-    } else if (ForwardMessage && typeof ForwardMessage.FromRawMessage === "function") {
-      var source = Object.assign({}, reply, { origId: reply.id || reply.origId });
-      forwarded = ForwardMessage.FromRawMessage(source, message.id);
+    // A reply is its own message model, never an entry in fwdMessages.
+    if (Message && typeof message.replyMessage.hasAttaches !== "function") {
+      message.replyMessage = Message.FromRawMessage(message.replyMessage);
     }
-    if (!forwarded) return;
-    if (message._openvkReplyForwarded && message.fwdMessages) {
-      message.fwdMessages = message.fwdMessages.filter(function (item) {
-        return item !== message._openvkReplyForwarded;
-      });
-    }
-    message.fwdMessages = message.fwdMessages || [];
-    message.fwdMessages.unshift(forwarded);
-    message._openvkReplyForwarded = forwarded;
   }
 
   function inheritReply(target, source) {
     if (!target || !source) return target;
-    if (!target.replyTo) target.replyTo = source.replyTo || null;
-    if (!target.replyMessage) target.replyMessage = source.replyMessage || null;
     if (!target.replyTo && target.replyMessage) {
       target.replyTo = target.replyMessage.id || target.replyMessage.origId || null;
     }
-    if (!target.replyTo) return target;
-    if (!target._openvkReplyForwarded && source._openvkReplyForwarded) {
-      target.fwdMessages = target.fwdMessages || [];
-      target.fwdMessages.unshift(source._openvkReplyForwarded);
-      target._openvkReplyForwarded = source._openvkReplyForwarded;
-    } else if (!target._openvkReplyForwarded) {
-      applyReply(target, null, null);
+    var sourceId = source.replyTo || source.replyMessage && (source.replyMessage.id || source.replyMessage.origId);
+    if (!target.replyTo) target.replyTo = sourceId || null;
+    if (!target.replyMessage && Number(target.replyTo) === Number(sourceId)) {
+      target.replyMessage = source.replyMessage || null;
     }
     return target;
   }
 
-  function renderReply(React, message, alternateLayout) {
-    if (!message || !message.replyTo) return null;
-    var title = React.createElement("div", {
-      key: "openvk-reply-title", className: "im_fwd_messages_title openvk-reply-title"
-    }, "\u0412 \u043e\u0442\u0432\u0435\u0442 \u043d\u0430 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435");
-    if (!alternateLayout) return title;
-    var reply = message.replyMessage;
-    if (!reply) return title;
-    return React.createElement("div", {
-      key: "openvk-reply", className: "im_fwd_messages openvk-message-reply"
-    }, title, React.createElement("div", { className: "im_fwd_message" },
-      React.createElement("div", { className: "im_dialog_message_text" }, reply.text || "")));
-  }
-
-  root.OpenVKCompat = { wrapApi: wrapApi, normalizeLongPoll: normalizeLongPoll, normalizeVideo: normalizeVideo, normalizePhoto: normalizePhoto, normalizeMessage: normalizeMessage, applyReply: applyReply, inheritReply: inheritReply, inheritContent: inheritContent, renderReply: renderReply };
+  root.OpenVKCompat = { wrapApi: wrapApi, normalizeLongPoll: normalizeLongPoll, normalizeVideo: normalizeVideo, normalizePhoto: normalizePhoto, normalizeMessage: normalizeMessage, applyReply: applyReply, inheritReply: inheritReply, inheritContent: inheritContent };
 })(window);

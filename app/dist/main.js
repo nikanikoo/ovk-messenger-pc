@@ -26,7 +26,17 @@ module.exports = function(e) {
     return t.d(n, "a", n), n
   }, t.o = function(e, t) {
     return Object.prototype.hasOwnProperty.call(e, t)
-  }, t.p = "../dist/", t(t.s = 959)
+  }, t.p = "../dist/", window.OpenVKReplies.configure({
+    getUser: function(id) { return t(5).getUser(id) },
+    getGroup: function(id) { return t(34).getGroupById(id) },
+    getMessage: function(groupId, peerId, id) {
+      var dialog = t(29).getDialogData(groupId, peerId);
+      return dialog && dialog.messages[id]
+    },
+    getText: function(message) { return t(26).getNotificationText(message, { notForNotification: !0, returnInfo: !0 }) },
+    formatText: function(text) { return t(61).replaceEmojiToImgObjects(text) },
+    toMessage: function(groupId, peerId, id) { return t(9).toMessage(groupId, peerId, id) }
+  }), t(t.s = 959)
 }([function(e, t, n) {
   "use strict";
   e.exports = n(308)
@@ -5250,6 +5260,11 @@ module.exports = function(e) {
     try {
       for (var l, c = e[Symbol.iterator](); !(r = (l = c.next()).done); r = !0) {
         var d = l.value;
+        if (d.replyMessage) {
+          var replyMissing = s([d.replyMessage], t + 1);
+          replyMissing.users.list.length > 0 && (n.list.push.apply(n.list, replyMissing.users.list), n.msgs.push(d.id));
+          replyMissing.audioPlaylists.list.length > 0 && (o.list.push.apply(o.list, replyMissing.audioPlaylists.list), o.msgs.push(d.id))
+        }
         if (d.fwdMessages && d.fwdMessages.length) {
           var f = s(d.fwdMessages, t + 1);
           f.users.list.length > 0 && (n.list.push.apply(n.list, f.users.list), d instanceof Z.default && n.msgs.push(d.id)), f.audioPlaylists.list.length > 0 && (o.list.push.apply(o.list, f.audioPlaylists.list), d instanceof Z.default && o.msgs.push(d.id))
@@ -5493,7 +5508,7 @@ module.exports = function(e) {
     try {
       for (var r, i = e[Symbol.iterator](); !(t = (r = i.next()).done); t = !0) {
         var a = r.value;
-        a.fwdMessages && a.fwdMessages.length > 0 && _(a.fwdMessages), a.attachments && a.attachments.length > 0 && v(a.attachments)
+        a.replyMessage && _([a.replyMessage]), a.fwdMessages && a.fwdMessages.length > 0 && _(a.fwdMessages), a.attachments && a.attachments.length > 0 && v(a.attachments)
       }
     } catch (e) {
       n = !0, o = e
@@ -8330,7 +8345,7 @@ module.exports = function(e) {
               c = s.getLastMessageId();
             if (r.id && s.messageIds.includes(r.id)) {
               var d = s.getMessageById(r.id);
-              return window.OpenVKCompat.inheritReply(r, d), window.OpenVKCompat.inheritContent(r, d), (d.fwdLoading || d.attachments.length != r.attachments.length || d.time != r.time || d.text != r.text || d.replyTo != r.replyTo) && (s.replaceMessage(r.id, r), s.updatePhotosList(), d.adminAuthorId == r.adminAuthorId || r.adminAuthorId || (r.adminAuthorId = d.adminAuthorId)), l && e.change("messages", {
+              return window.OpenVKCompat.inheritReply(r, d), window.OpenVKCompat.inheritContent(r, d), (d.fwdLoading || d.attachments.length != r.attachments.length || d.time != r.time || d.text != r.text || d.replyTo != r.replyTo || d.replyMessage != r.replyMessage) && (s.replaceMessage(r.id, r), s.updatePhotosList(), d.adminAuthorId == r.adminAuthorId || r.adminAuthorId || (r.adminAuthorId = d.adminAuthorId)), l && e.change("messages", {
                 ids: [r.id],
                 rerender: !0,
                 groupId: n
@@ -19332,7 +19347,7 @@ module.exports = function(e) {
               geo: t.geo
             })), t.fwd_messages && t.fwd_messages.length && (this.fwdMessages = t.fwd_messages.map(function(e) {
               return l.default.FromRawMessage(e, t.id)
-            })), window.OpenVKCompat.applyReply(this, t, l.default), t.emoji && (this.emoji = t.emoji), t.important && (this.important = t.important), t.action) {
+            })), window.OpenVKCompat.applyReply(this, t, e), t.emoji && (this.emoji = t.emoji), t.important && (this.important = t.important), t.action) {
             var s = {
               type: t.action.type,
               member_id: intval(t.action.member_id),
@@ -19368,7 +19383,7 @@ module.exports = function(e) {
             geo: t.geo
           })), t.fwd_messages && t.fwd_messages.length && (this.fwdMessages = t.fwd_messages.map(function(e) {
             return l.default.FromRawMessage(e, t.id)
-          })), window.OpenVKCompat.applyReply(this, t, l.default), t.emoji && (this.emoji = t.emoji), t.important && (this.important = t.important), t.action && (this.action = new p.default(t.action, this.fromId)), this._isGift = n, t.deleted && (this.deleted = !0)
+          })), window.OpenVKCompat.applyReply(this, t, e), t.emoji && (this.emoji = t.emoji), t.important && (this.important = t.important), t.action && (this.action = new p.default(t.action, this.fromId)), this._isGift = n, t.deleted && (this.deleted = !0)
         }
       }, {
         key: "setFwdMessages",
@@ -42291,7 +42306,7 @@ module.exports = function(e) {
             peerId: a,
             groupId: i,
             messageId: f
-          }) : [c.default.createElement(v.default, {
+          }) : [window.OpenVKReplies.render(c.default, t, i, a), c.default.createElement(v.default, {
             key: "mt",
             shouldUpdate: this.state.shouldUpdateFull,
             highlightKeyword: this.props.highlightKeyword,
@@ -42309,7 +42324,7 @@ module.exports = function(e) {
             messageId: f,
             attachments: t.attachments,
             availableContentWidth: A
-          }), window.OpenVKCompat.renderReply(c.default, t), c.default.createElement(g.default, {
+          }), c.default.createElement(g.default, {
             key: "fw",
             level: 1,
             shouldUpdate: this.state.shouldUpdateFull,
@@ -52644,7 +52659,7 @@ module.exports = function(e) {
       return a(t, e), d(t, [{
         key: "shouldComponentUpdate",
         value: function(e, t) {
-          return e.shouldUpdate || e.shouldUpdateAttaches || e.compactMode != this.props.compactMode || t.keyboardVisible != this.state.keyboardVisible
+          return e.shouldUpdate || e.shouldUpdateAttaches || e.replyTo != this.props.replyTo || e.compactMode != this.props.compactMode || t.keyboardVisible != this.state.keyboardVisible
         }
       }, {
         key: "componentWillReceiveProps",
@@ -52662,7 +52677,7 @@ module.exports = function(e) {
                 o = n.getMessageById(this.props.editingMessageId);
               this._setValue(this.prepareTextBeforePaste(o.text, o.text))
             } else this._setValue("");
-          this.state.keyboardVisible != t.keyboardVisible && this.props.onHeightChange()
+          (this.state.keyboardVisible != t.keyboardVisible || this.props.replyTo != e.replyTo) && this.props.onHeightChange()
         }
       }, {
         key: "componentDidMount",
@@ -52711,7 +52726,7 @@ module.exports = function(e) {
           }, lang.edit_message_title))), p.default.createElement(y.default, {
             className: e.join(" "),
             ref: "rootNode"
-          }, t, p.default.createElement("div", {
+          }, t, this.props.replyTo && window.OpenVKReplies.renderDraft(p.default, this.props.groupId, this.props.peerId, this.props.replyTo, this.props.onRemoveAttachClick.bind(this, "fwd")), p.default.createElement("div", {
             className: "im_dialog_input_field_wrap"
           }, p.default.createElement(E.default, {
             ref: "sendButton",
@@ -90101,7 +90116,7 @@ module.exports = function(e) {
               }
             }
           }
-          if (this.props.fwd) {
+          if (this.props.fwd && !this.props.replyTo) {
             var l = {
               count: this.props.fwd.length,
               onRemoveClick: this.props.onRemoveAttachClick.bind(this, "fwd"),
@@ -90111,13 +90126,7 @@ module.exports = function(e) {
             1 != l.count || this.props.isEditing || (l.messageId = this.props.fwd[0]), t.push(b.default.createElement(N.default, {
               isLast: !0,
               key: "fwd"
-            }, this.props.replyTo ? b.default.createElement("div", {
-              className: "openvk-draft-reply"
-            }, b.default.createElement("div", {
-              className: "im_fwd_messages_title"
-            }, "В ответ на сообщение"), b.default.createElement(E.default, _({
-              groupId: this.props.groupId
-            }, l))) : b.default.createElement(E.default, _({
+            }, b.default.createElement(E.default, _({
               groupId: this.props.groupId
             }, l))))
           }
@@ -91221,7 +91230,7 @@ module.exports = function(e) {
             peerId: i,
             groupId: r,
             messageId: l
-          }) : [window.OpenVKCompat.renderReply(c.default, t, !0), c.default.createElement(h.default, {
+          }) : [window.OpenVKReplies.render(c.default, t, r, i), c.default.createElement(h.default, {
             key: "at",
             className: "im_dialog_message_attachments",
             attachments: t.attachments,
@@ -91364,7 +91373,7 @@ module.exports = function(e) {
             peerId: r,
             groupId: o,
             messageId: u
-          }) : [d.default.createElement(y.default, {
+          }) : [window.OpenVKReplies.render(d.default, t, o, r), d.default.createElement(y.default, {
             key: "mt",
             shouldUpdate: this.state.shouldUpdateFull,
             updateTime: t.updateTime,
