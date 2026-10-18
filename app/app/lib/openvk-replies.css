@@ -61,8 +61,10 @@ body.-large_font .im_message_reply_text {
 
 .openvk-draft-reply {
   position: relative;
-  width: 240px;
-  max-width: 100%;
+  width: auto;
+  min-width: 0;
+  flex: 0 0 40px;
+  margin: 10px 40px 0 50px;
   padding-right: 28px;
   box-sizing: border-box;
   cursor: default;
