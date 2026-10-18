@@ -21429,7 +21429,11 @@ module.exports = function(e) {
         value: function(e) {
           var t = (0, l.createCanvas)(x, x, !0),
             n = t.getContext("2d");
-          return n.clearRect(0, 0, x, x), n.globalCompositeOperation = "source-over", n.drawImage(e, 0, 0, x, x), n.fillStyle = "#fff", n.globalCompositeOperation = "destination-in", n.beginPath(), n.arc(x / 2, x / 2, x / 2, 0, 2 * Math.PI), n.closePath(), n.fill(), t.toDataURL()
+          n.clearRect(0, 0, x, x), n.globalCompositeOperation = "source-over", n.drawImage(e, 0, 0, x, x);
+          if (!(window.OpenVKAppearance && window.OpenVKAppearance.areAvatarsSquare())) {
+            n.fillStyle = "#fff", n.globalCompositeOperation = "destination-in", n.beginPath(), n.arc(x / 2, x / 2, x / 2, 0, 2 * Math.PI), n.closePath(), n.fill()
+          }
+          return t.toDataURL()
         }
       }, {
         key: "drawInitials",
@@ -21439,10 +21443,14 @@ module.exports = function(e) {
             o = n.getContext("2d");
           o.clearRect(0, 0, x, x), o.globalCompositeOperation = "source-over";
           var r = o.createRadialGradient(50, 0, 0, 50, 0, 105);
-          r.addColorStop(0, c.Initials.Colors[e.color][0]), r.addColorStop(1, c.Initials.Colors[e.color][1]), o.arc(50, 0, 100, 0, 2 * Math.PI), o.fillStyle = r, o.fill(), o.textAlign = "center", o.fillStyle = "#fff";
+          r.addColorStop(0, c.Initials.Colors[e.color][0]), r.addColorStop(1, c.Initials.Colors[e.color][1]), o.fillStyle = r, o.fillRect(0, 0, x, x), o.textAlign = "center", o.fillStyle = "#fff";
           var i = t ? c.Initials.GetFallbackFontFamily() : c.Initials.FontFamily,
             a = e.getFontSize(x);
-          return o.font = a + 'px "' + i + '"', o.textBaseline = "middle", o.fillText(e.initials, x / 2, x / 2), o.fillStyle = "#fff", o.globalCompositeOperation = "destination-in", o.beginPath(), o.arc(x / 2, x / 2, x / 2, 0, 2 * Math.PI), o.closePath(), o.fill(), n.toDataURL()
+          o.font = a + 'px "' + i + '"', o.textBaseline = "middle", o.fillText(e.initials, x / 2, x / 2);
+          if (!(window.OpenVKAppearance && window.OpenVKAppearance.areAvatarsSquare())) {
+            o.fillStyle = "#fff", o.globalCompositeOperation = "destination-in", o.beginPath(), o.arc(x / 2, x / 2, x / 2, 0, 2 * Math.PI), o.closePath(), o.fill()
+          }
+          return n.toDataURL()
         }
       }, {
         key: "handleActiveNotification",
@@ -46770,6 +46778,8 @@ module.exports = function(e) {
       appearance_color_red: "Red",
       appearance_color_darkgray: "Dark gray",
       appearance_color_yellow: "Yellow",
+      appearance_square_badges: "Square unread counters",
+      appearance_square_avatars: "Square avatars",
       appearance_wallpaper_heading: "Chat wallpapers",
       appearance_wallpaper_choose: "Choose file",
       appearance_wallpaper_remove: "Remove wallpaper",
@@ -47634,6 +47644,8 @@ module.exports = function(e) {
       appearance_color_red: "Красный",
       appearance_color_darkgray: "Тёмно-серый",
       appearance_color_yellow: "Жёлтый",
+      appearance_square_badges: "Квадратные счётчики",
+      appearance_square_avatars: "Квадратные аватарки",
       appearance_wallpaper_heading: "Обои для чатов",
       appearance_wallpaper_choose: "Выбрать файл",
       appearance_wallpaper_remove: "Убрать обои",
@@ -48498,6 +48510,8 @@ module.exports = function(e) {
       appearance_color_red: "Червоний",
       appearance_color_darkgray: "Темно-сірий",
       appearance_color_yellow: "Жовтий",
+      appearance_square_badges: "Квадратні лічильники",
+      appearance_square_avatars: "Квадратні аватарки",
       appearance_wallpaper_heading: "Шпалери для чатів",
       appearance_wallpaper_choose: "Вибрати файл",
       appearance_wallpaper_remove: "Прибрати шпалери",
