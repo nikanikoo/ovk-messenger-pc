@@ -488,6 +488,13 @@ body.openvk-theme-night .im_info_attach_video_views {
 
 .im_right_empty.openvk-wallpaper-active { overflow: hidden; }
 
+/* Let transparent GIFs and image documents blend with the chat background. */
+.im_attach_doc.-image,
+.im_attach_doc.-image .im_attach_doc_image,
+.im_attach_doc.-image .im_attach_doc_gif_image {
+  background-color: transparent;
+}
+
 .im_dialog_messages.openvk-wallpaper-active .im_dialog_message.-selected,
 .im_dialog_messages.openvk-wallpaper-active .im_dialog_message_next.-selected,
 .im_dialog_messages.openvk-wallpaper-active .im_dialog_message.-gift.-selected {
