@@ -566,6 +566,8 @@ if (process.type == 'renderer') {
     appearance_color_red: "Red",
     appearance_color_darkgray: "Dark gray",
     appearance_color_yellow: "Yellow",
+    appearance_square_badges: "Square unread counters",
+    appearance_square_avatars: "Square avatars",
     appearance_wallpaper_heading: "Chat wallpapers",
     appearance_wallpaper_choose: "Choose file",
     appearance_wallpaper_remove: "Remove wallpaper",

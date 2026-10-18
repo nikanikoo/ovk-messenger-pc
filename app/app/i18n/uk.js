@@ -566,6 +566,8 @@ if (process.type == 'renderer') {
     appearance_color_red: "Червоний",
     appearance_color_darkgray: "Темно-сірий",
     appearance_color_yellow: "Жовтий",
+    appearance_square_badges: "Квадратні лічильники",
+    appearance_square_avatars: "Квадратні аватарки",
     appearance_wallpaper_heading: "Шпалери для чатів",
     appearance_wallpaper_choose: "Вибрати файл",
     appearance_wallpaper_remove: "Прибрати шпалери",

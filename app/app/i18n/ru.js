@@ -566,6 +566,8 @@ if (process.type == 'renderer') {
     appearance_color_red: "Красный",
     appearance_color_darkgray: "Тёмно-серый",
     appearance_color_yellow: "Жёлтый",
+    appearance_square_badges: "Квадратные счётчики",
+    appearance_square_avatars: "Квадратные аватарки",
     appearance_wallpaper_heading: "Обои для чатов",
     appearance_wallpaper_choose: "Выбрать файл",
     appearance_wallpaper_remove: "Убрать обои",
