@@ -1,0 +1,52 @@
+/* Avatar photos, initials, placeholders and their overlays share square corners. */
+body.openvk-square-avatars .component-image.-rounded,
+body.openvk-square-avatars .component-image.-rounded > .component-image-image,
+body.openvk-square-avatars .im_initials_avatar,
+body.openvk-square-avatars .im_dialog_item_photo,
+body.openvk-square-avatars .im_dialog_item_image_canvas_wrap,
+body.openvk-square-avatars .im_dialog_message_photo,
+body.openvk-square-avatars .im_fwd_message_photo,
+body.openvk-square-avatars .im_dialog_header_compact_avatar,
+body.openvk-square-avatars .im_info_name_image,
+body.openvk-square-avatars .im_info_chat_image_placeholder,
+body.openvk-square-avatars .im_info_chat_image_change,
+body.openvk-square-avatars .im_info_chat_image_progress,
+body.openvk-square-avatars .im_info_members_user_photo,
+body.openvk-square-avatars .im_dialogs_search_item_user_photo,
+body.openvk-square-avatars .im_attach_wall_message_photo,
+body.openvk-square-avatars .im_message_action_chat_photo,
+body.openvk-square-avatars .compose_user_line_image,
+body.openvk-square-avatars .compose_user_line_image .component-image-image,
+body.openvk-square-avatars .compose_user_line_image_change,
+body.openvk-square-avatars .compose_filter_user_photo,
+body.openvk-square-avatars .im_input_mention_list_user_photo,
+body.openvk-square-avatars .im_attach_poll_votes_result_user_link,
+body.openvk-square-avatars .im_attach_poll_votes_result_user,
+body.openvk-square-avatars .im_attach_poll_votes_result_user > .component-image-image,
+body.openvk-square-avatars .im_chat_preview_photo > .component-image-image,
+body.openvk-square-avatars .im_chat_preview_box_user,
+body.openvk-square-avatars .im_chat_preview_box_more,
+body.openvk-square-avatars .im_chat_preview_box_more > .component-image-image,
+body.openvk-square-avatars .im_chat_preview_box_user_image,
+body.openvk-square-avatars .im_chat_preview_box_user_image > .component-image-image,
+body.openvk-square-avatars .acc_item > .component-image:before,
+body.openvk-square-avatars .forward_box_item_photo,
+body.openvk-square-avatars .settings_profile_userpic,
+body.openvk-square-avatars .settings_profile_userpic_uploading,
+body.openvk-square-avatars .settings_user_photo,
+body.openvk-square-avatars .v_controls_user_img,
+body.openvk-square-avatars .v_video_info_image,
+body.openvk-square-avatars .v_story_header_pic {
+  border-radius: 0 !important;
+}
+
+.openvk-square-avatars-control {
+  margin-top: 16px;
+}
+
+body.openvk-square-badges .im_dialog_item_badge,
+body.openvk-square-badges .im_history_end_button_badge,
+body.openvk-square-badges .im_dialog_header_back_badge,
+body.openvk-square-badges .acc_item_badge {
+  border-radius: 0 !important;
+}

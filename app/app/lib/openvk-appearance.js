@@ -151,11 +151,13 @@
         accent: typeof saved.accent === 'string' ? saved.accent : '',
         accentId: typeof saved.accentId === 'string' ? saved.accentId : '',
         customColor: /^#[0-9a-f]{6}$/i.test(saved.customColor || '') ? saved.customColor.toUpperCase() : '#5181B8',
+        squareAvatars: saved.squareAvatars === true,
+        squareBadges: saved.squareBadges === true,
         lastLightTheme: saved.lastLightTheme === 'day' || (!saved.lastLightTheme && saved.theme === 'day') ? 'day' : 'classic',
         lastDarkTheme: saved.lastDarkTheme === 'tinted' || (!saved.lastDarkTheme && saved.theme === 'tinted') ? 'tinted' : 'night'
       }
     } catch (_) {
-      return { theme: 'classic', telegramThemes: [], telegramThemeId: '', telegramTheme: null, accent: '', accentId: '', customColor: '#5181B8', lastLightTheme: 'classic', lastDarkTheme: 'night' }
+      return { theme: 'classic', telegramThemes: [], telegramThemeId: '', telegramTheme: null, accent: '', accentId: '', customColor: '#5181B8', squareAvatars: false, squareBadges: false, lastLightTheme: 'classic', lastDarkTheme: 'night' }
     }
   }
 
@@ -166,6 +168,17 @@
 
   function savePrefs() {
     try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)) } catch (_) {}
+  }
+
+  function applyShapes() {
+    document.body.classList.toggle('openvk-square-avatars', prefs.squareAvatars)
+    document.body.classList.toggle('openvk-square-badges', prefs.squareBadges)
+    document.querySelectorAll('.openvk-square-avatars-control').forEach(function (node) {
+      setCheckbox(node, prefs.squareAvatars)
+    })
+    document.querySelectorAll('.openvk-square-badges-control').forEach(function (node) {
+      setCheckbox(node, prefs.squareBadges)
+    })
   }
 
   function telegramThemeById(id) {
@@ -443,6 +456,7 @@
       + 'body.openvk-theme-classic .login_submit_button:not(.-disabled):active,body.openvk-theme-day .login_submit_button:not(.-disabled):active{background-color:' + scaledColor(accent, .78) + ';}'
     document.body.classList.remove('openvk-theme-classic', 'openvk-theme-day', 'openvk-theme-tinted', 'openvk-theme-night', 'openvk-theme-telegram')
     document.body.classList.add('openvk-theme-' + theme.id)
+    applyShapes()
     document.documentElement.style.setProperty('--ovk-accent', accent)
     var checkRgb = hexToRgb(accent) || [81, 129, 184]
     document.documentElement.style.setProperty('--openvk-check-fg', (checkRgb[0] * 299 + checkRgb[1] * 587 + checkRgb[2] * 114) / 1000 > 150 ? '#20232B' : '#FFFFFF')
@@ -458,9 +472,22 @@
       '<div class="openvk-accent-list"></div>' +
       '<h3 class="openvk-accent-heading">' + wallpaperWords.heading + '</h3>' +
       '<div class="openvk-wallpaper-row"><button type="button" class="openvk-wallpaper-thumb" aria-label="' + wallpaperWords.preview + '" title="' + wallpaperWords.preview + '"></button><button type="button" class="openvk-wallpaper-choose">' + wallpaperWords.choose + '</button><button type="button" class="openvk-wallpaper-remove">' + wallpaperWords.remove + '</button></div>' +
-      checkboxMarkup('openvk-wallpaper-tile', wallpaperWords.tile)
+      checkboxMarkup('openvk-wallpaper-tile', wallpaperWords.tile) +
+      checkboxMarkup('openvk-square-avatars-control', lang.appearance_square_avatars) +
+      checkboxMarkup('openvk-square-badges-control', lang.appearance_square_badges)
     renderPanel(root)
     installThemeMenu(root)
+    onCheckbox(root.querySelector('.openvk-square-avatars-control'), function () {
+      prefs.squareAvatars = !prefs.squareAvatars
+      savePrefs()
+      applyShapes()
+    })
+    onCheckbox(root.querySelector('.openvk-square-badges-control'), function () {
+      prefs.squareBadges = !prefs.squareBadges
+      savePrefs()
+      applyShapes()
+    })
+    applyShapes()
     onCheckbox(root.querySelector('.openvk-wallpaper-tile'), function () {
       wallpaper.tile = !wallpaper.tile
       saveWallpaper()
@@ -1106,10 +1133,12 @@
   }
 
   window.OpenVKAppearance = {
+    areAvatarsSquare: function () { return prefs.squareAvatars },
     getNotificationTheme: function () {
       var palette = lastPalette || {}
       var background = palette['layer-box-bg'] || currentTheme().bg
       return {
+        squareAvatars: prefs.squareAvatars,
         background: background,
         header: palette['layer-box-header-bg'] || background,
         border: palette['header-border'] || currentTheme().border,
