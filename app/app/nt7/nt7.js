@@ -83,6 +83,7 @@ function getPendingData() {
 
 function applyAppearance(appearance) {
   if (!appearance) return
+  document.documentElement.style.setProperty('--nt-avatar-radius', appearance.squareAvatars ? '0' : '50%')
   const colors = {
     '--nt-bg': appearance.background,
     '--nt-header-bg': appearance.header,

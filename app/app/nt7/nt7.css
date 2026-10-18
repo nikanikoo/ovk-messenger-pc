@@ -111,7 +111,7 @@ textarea::-webkit-input-placeholder {
 .avatar > img {
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  border-radius: var(--nt-avatar-radius, 50%);
   border: 0;
   outline: none;
 }
