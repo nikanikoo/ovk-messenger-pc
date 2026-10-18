@@ -626,6 +626,7 @@ if (process.type == 'renderer') {
     settings_general_short_name: "Короткий адрес",
     settings_general_cache: "Кэш",
     settings_general_invisible_mode: "Режим невидимки",
+    settings_general_gif_autoplay: "Автовоспроизведение GIF",
     settings_general_shorten_surnames: "Сокращать фамилии",
     // @ifndef BRANCH_MASTER
     settings_general_ignore_invalid_cert: "Отключить проверку сертификата",

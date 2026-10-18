@@ -626,6 +626,7 @@ if (process.type == 'renderer') {
     settings_general_short_name: "Short address",
     settings_general_cache: "Cache",
     settings_general_invisible_mode: "Invisible mode",
+    settings_general_gif_autoplay: "Autoplay GIFs",
     settings_general_shorten_surnames: "Shorten surnames",
     // @ifndef BRANCH_MASTER
     settings_general_ignore_invalid_cert: "Disable certificate verification",
