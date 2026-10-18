@@ -17933,6 +17933,7 @@ module.exports = function(e) {
             scale: c(),
             autostart: x.default.getBool("autostart"),
             shortenSurnames: x.default.getBool("shorten_surnames"),
+            gifAutoplay: !x.default.getBool("disable_gif_autoplay"),
             staticDownloadsLocation: x.default.getStaticDownloadsLocation(),
             downloadsAlwaysAsk: x.default.getBool("downloads_always_ask"),
             windows_native_frame: n,
@@ -18375,6 +18376,11 @@ module.exports = function(e) {
         key: "setShortenSurnames",
         value: function(e) {
           x.default.setBool("shorten_surnames", e), this.loadGeneralSettings()
+        }
+      }, {
+        key: "setGifAutoplay",
+        value: function(e) {
+          x.default.setBool("disable_gif_autoplay", !e), window.dispatchEvent(new CustomEvent("openvk-gif-autoplay", { detail: e })), this.loadGeneralSettings()
         }
       }]), t
     }(w.Controller);
@@ -26694,7 +26700,7 @@ module.exports = function(e) {
             a && (r && void 0 !== a.removed ? delete a.removed : r || void 0 !== a.not_banned || (a.removed = !0), e.emit("blacklist"))
           }
         }).onPayload("settings_general", function(t) {
-          e.invisibleMode = t.invisible_mode, e.verboseLogs = t.verbose_logs, e.alwaysOnTop = t.alwaysOnTop, e.visibleOnAllWorkspaces = t.visibleOnAllWorkspaces, e.sendByCmdEnter = t.send_by_cmd_enter, e.stickersSuggestions = t.stickers_suggestions, e.tray = t.tray, e.openInTray = t.openInTray, e.autoUpdates = t.auto_updates, e.shortenSurnames = t.shortenSurnames, e.badge = t.badge, e.lang = t.lang, e.spellcheck = t.spellcheck, e.scrollOnSend = t.scrollOnSend, e.scale = t.scale, e.autostart = t.autostart, e.staticDownloadsLocation = t.staticDownloadsLocation, e.downloadsAlwaysAsk = t.downloadsAlwaysAsk, e.windowsNativeFrame = t.windows_native_frame, e.fontSize = t.fontSize, "general" == e.tab && e.emit("change")
+          e.invisibleMode = t.invisible_mode, e.verboseLogs = t.verbose_logs, e.alwaysOnTop = t.alwaysOnTop, e.visibleOnAllWorkspaces = t.visibleOnAllWorkspaces, e.sendByCmdEnter = t.send_by_cmd_enter, e.stickersSuggestions = t.stickers_suggestions, e.tray = t.tray, e.openInTray = t.openInTray, e.autoUpdates = t.auto_updates, e.shortenSurnames = t.shortenSurnames, e.gifAutoplay = t.gifAutoplay, e.badge = t.badge, e.lang = t.lang, e.spellcheck = t.spellcheck, e.scrollOnSend = t.scrollOnSend, e.scale = t.scale, e.autostart = t.autostart, e.staticDownloadsLocation = t.staticDownloadsLocation, e.downloadsAlwaysAsk = t.downloadsAlwaysAsk, e.windowsNativeFrame = t.windows_native_frame, e.fontSize = t.fontSize, "general" == e.tab && e.emit("change")
         }).onPayload("settings_notifications", function(t) {
           e.notificationsBadge = t.badge, e.notificationsCustomStyleEnabled = t.customStyleEnabled, e.notificationsLockScreenMode = t.lockScreenMode, e.notificationsPrivateSoundEnabled = t.privateSoundEnabled, e.notificationsPrivateDialogsEnabled = t.privateDialogsEnabled, e.notificationsPrivateChatsEnabled = t.privateChatsEnabled, e.notificationsPrivateTextMode = t.privateTextMode, e.notificationsCommunitySoundEnabled = t.communitySoundEnabled, e.notificationsCommunityTextMode = t.communityTextMode, "notifications" == e.tab && e.emit("change")
         }).onPayload("settings_notifications_mute", function(t) {
@@ -26784,6 +26790,7 @@ module.exports = function(e) {
             stickersSuggestions: this.stickersSuggestions,
             tray: this.tray,
             shortenSurnames: this.shortenSurnames,
+            gifAutoplay: this.gifAutoplay,
             openInTray: this.openInTray,
             autoUpdates: this.autoUpdates,
             badge: this.badge,
@@ -46827,6 +46834,7 @@ module.exports = function(e) {
       settings_general_short_name: "Short address",
       settings_general_cache: "Cache",
       settings_general_invisible_mode: "Invisible mode",
+      settings_general_gif_autoplay: "Autoplay GIFs",
       settings_general_shorten_surnames: "Shorten surnames",
       settings_general_cache_size_loading: "Loading...",
       settings_general_cache_erasing: "Clearing...",
@@ -47691,6 +47699,7 @@ module.exports = function(e) {
       settings_general_short_name: "Короткий адрес",
       settings_general_cache: "Кэш",
       settings_general_invisible_mode: "Режим невидимки",
+      settings_general_gif_autoplay: "Автовоспроизведение GIF",
       settings_general_shorten_surnames: "Сокращать фамилии",
       settings_general_cache_size_loading: "Подсчёт...",
       settings_general_cache_erasing: "Очистка...",
@@ -48555,6 +48564,7 @@ module.exports = function(e) {
       settings_general_short_name: "Коротка адреса",
       settings_general_cache: "Кеш",
       settings_general_invisible_mode: "Режим невидимки",
+      settings_general_gif_autoplay: "Автовідтворення GIF",
       settings_general_shorten_surnames: "Скорочувати прізвища",
       settings_general_cache_size_loading: "Підрахунок...",
       settings_general_cache_erasing: "Очищення...",
@@ -51307,13 +51317,10 @@ module.exports = function(e) {
           (0, g.cancelEvent)(e);
           var t = o.props.doc;
           if (t.isLoaded() || t.isImageSrcLoaded())
-            if (t.isGif()) "initial" == o.state.gifState ? o.setState({
-              gifState: "loading"
-            }, function() {
-              o.refs.gif_image.src = t.url
-            }) : "loaded" == o.state.gifState && (o.refs.gif_image.src = "", o.setState({
-              gifState: "initial"
-            }));
+            if (t.isGif()) {
+              o.gifFailed = !1, o.gifPausedByUser = "initial" != o.state.gifState;
+              o.gifPausedByUser ? o.stopGif() : o.startGif()
+            }
             else {
               for (var n = [], r = null, i = 0; i < o.props.docs.length; i++) {
                 var a = o.props.docs[i],
@@ -51330,21 +51337,55 @@ module.exports = function(e) {
               })
             }
         }, o.onGifLoad = function(e) {
-          "loading" == o.state.gifState && o.setState({
+          o.gifMounted && "loading" == o.state.gifState && o.setState({
             gifState: "loaded"
           })
         }, o.onGifError = function(e) {
-          "initial" != o.state.gifState && (o.refs.gif_image.src = "", o.setState({
-            gifState: "initial"
-          }))
+          o.gifMounted && "initial" != o.state.gifState && (o.gifFailed = !0, o.stopGif())
+        }, o.onGifAutoplayChange = function(e) {
+          o.gifPausedByUser = !e.detail, o.gifFailed = !1;
+          e.detail ? o.maybeAutoPlayGif() : o.stopGif()
         }, a = n, i(o, a)
       }
       return a(t, e), l(t, [{
+        key: "componentDidMount",
+        value: function() {
+          this.gifMounted = !0, window.addEventListener("openvk-gif-autoplay", this.onGifAutoplayChange), this.maybeAutoPlayGif()
+        }
+      }, {
+        key: "componentDidUpdate",
+        value: function() {
+          this.maybeAutoPlayGif()
+        }
+      }, {
+        key: "componentWillUnmount",
+        value: function() {
+          this.gifMounted = !1, window.removeEventListener("openvk-gif-autoplay", this.onGifAutoplayChange), this.refs.gif_image.removeAttribute("src")
+        }
+      }, {
         key: "componentWillReceiveProps",
         value: function(e) {
-          this.props.doc != e.doc && (this.setState({
-            gifState: "initial"
-          }), this.refs.gif_image.src = "")
+          (this.props.doc.getId() != e.doc.getId() || this.props.doc.url != e.doc.url) && (this.gifPausedByUser = !1, this.gifFailed = !1, this.stopGif())
+        }
+      }, {
+        key: "maybeAutoPlayGif",
+        value: function() {
+          !n(20).getBool("disable_gif_autoplay") && !this.gifPausedByUser && !this.gifFailed && "initial" == this.state.gifState && this.startGif()
+        }
+      }, {
+        key: "startGif",
+        value: function() {
+          var e = this, t = this.props.doc;
+          this.gifMounted && t.isGif() && (t.isLoaded() || t.isImageSrcLoaded()) && t.url && "initial" == this.state.gifState && this.setState({
+            gifState: "loading"
+          }, function() {
+            e.gifMounted && e.props.doc == t && e.refs.gif_image && (e.refs.gif_image.src = t.url)
+          })
+        }
+      }, {
+        key: "stopGif",
+        value: function() {
+          this.refs.gif_image && this.refs.gif_image.removeAttribute("src"), this.gifMounted && this.setState({ gifState: "initial" })
         }
       }, {
         key: "render",
@@ -96394,6 +96435,7 @@ module.exports = function(e) {
                   lang: a.lang,
                   scale: a.scale,
                   shortenSurnames: a.shortenSurnames,
+                  gifAutoplay: a.gifAutoplay,
                   autostart: a.autostart,
                   spellcheck: a.spellcheck,
                   scrollOnSend: a.scrollOnSend,
@@ -97075,6 +97117,8 @@ module.exports = function(e) {
           })
         }, n.onShortenSurnamesToggle = function(e) {
           z.default.setShortenSurnames(e)
+        }, n.onGifAutoplayToggle = function(e) {
+          z.default.setGifAutoplay(e)
         }, n.langItems = G.default.getLangs().map(function(e) {
           var t = e.key,
             n = e.name;
@@ -97182,6 +97226,11 @@ module.exports = function(e) {
               enabled: this.props.shortenSurnames,
               label: lang.settings_general_shorten_surnames,
               onToggle: this.onShortenSurnamesToggle
+            })), t.push(d.default.createElement(k.default, {
+              key: "gif_autoplay",
+              enabled: this.props.gifAutoplay,
+              label: lang.settings_general_gif_autoplay,
+              onToggle: this.onGifAutoplayToggle
             })), t.push(d.default.createElement(w.default, {
               key: "sec_scale"
             }, lang.settings_interface_scale), d.default.createElement(N.default, {
