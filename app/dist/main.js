@@ -52604,7 +52604,7 @@ module.exports = function(e) {
       return a(t, e), d(t, [{
         key: "shouldComponentUpdate",
         value: function(e, t) {
-          return e.shouldUpdate || e.shouldUpdateAttaches || e.compactMode != this.props.compactMode || t.keyboardVisible != this.state.keyboardVisible
+          return e.shouldUpdate || e.shouldUpdateAttaches || e.replyTo != this.props.replyTo || e.compactMode != this.props.compactMode || t.keyboardVisible != this.state.keyboardVisible
         }
       }, {
         key: "componentWillReceiveProps",
@@ -52622,7 +52622,7 @@ module.exports = function(e) {
                 o = n.getMessageById(this.props.editingMessageId);
               this._setValue(this.prepareTextBeforePaste(o.text, o.text))
             } else this._setValue("");
-          this.state.keyboardVisible != t.keyboardVisible && this.props.onHeightChange()
+          (this.state.keyboardVisible != t.keyboardVisible || this.props.replyTo != e.replyTo) && this.props.onHeightChange()
         }
       }, {
         key: "componentDidMount",
@@ -52671,7 +52671,7 @@ module.exports = function(e) {
           }, lang.edit_message_title))), p.default.createElement(y.default, {
             className: e.join(" "),
             ref: "rootNode"
-          }, t, p.default.createElement("div", {
+          }, t, this.props.replyTo && window.OpenVKReplies.renderDraft(p.default, this.props.groupId, this.props.peerId, this.props.replyTo, this.props.onRemoveAttachClick.bind(this, "fwd")), p.default.createElement("div", {
             className: "im_dialog_input_field_wrap"
           }, p.default.createElement(E.default, {
             ref: "sendButton",
@@ -90061,7 +90061,7 @@ module.exports = function(e) {
               }
             }
           }
-          if (this.props.fwd) {
+          if (this.props.fwd && !this.props.replyTo) {
             var l = {
               count: this.props.fwd.length,
               onRemoveClick: this.props.onRemoveAttachClick.bind(this, "fwd"),
@@ -90071,7 +90071,7 @@ module.exports = function(e) {
             1 != l.count || this.props.isEditing || (l.messageId = this.props.fwd[0]), t.push(b.default.createElement(N.default, {
               isLast: !0,
               key: "fwd"
-            }, this.props.replyTo ? window.OpenVKReplies.renderDraft(b.default, this.props.groupId, this.props.peerId, this.props.replyTo, l.onRemoveClick) : b.default.createElement(E.default, _({
+            }, b.default.createElement(E.default, _({
               groupId: this.props.groupId
             }, l))))
           }
