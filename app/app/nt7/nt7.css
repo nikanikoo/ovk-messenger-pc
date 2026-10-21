@@ -51,18 +51,20 @@ textarea::-webkit-input-placeholder {
 .title {
   flex: 0 0 32px;
   line-height: 32px;
+  font-family: var(--nt-title-font, 'Segoe UI', sans-serif);
   background: var(--nt-header-bg, #f6f8fa) url(./logo.svg) 7px center no-repeat;
   background-size: 18px 18px;
   text-transform: uppercase;
   font-size: 14px;
-  color: var(--nt-muted, #71787f);
+  color: var(--nt-title-fg, #fff);
+  font-weight: var(--nt-title-weight, 700);
   padding-left: 35px;
 }
 .title-close {
   float: right;
   height: 32px;
   width: 32px;
-  background: var(--nt-accent, #757b7d);
+  background: var(--nt-close-fg, var(--nt-accent, #757b7d));
   -webkit-mask-image: url(./close.svg);
   -webkit-mask-position: center center;
   -webkit-mask-repeat: no-repeat;

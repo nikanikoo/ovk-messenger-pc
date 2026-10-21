@@ -88,6 +88,10 @@
   cursor: pointer;
 }
 
+.openvk-theme-choice-import + .openvk-theme-choice-import {
+  margin-top: 10px;
+}
+
 .openvk-theme-choice-import:hover {
   background: var(--context-menu-item-hover-bg, rgba(127, 127, 127, .12));
 }
