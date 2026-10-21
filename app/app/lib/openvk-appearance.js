@@ -141,7 +141,7 @@
         return { id: item.id, name: item.name || telegramWords.defaultName, colors: item.colors, background: item.background || '', wallpaper: normalizeWallpaper(item.wallpaper || oldWallpaper) }
       }) : []
       var cssThemes = Array.isArray(saved.cssThemes) ? saved.cssThemes.filter(function (item) { return item && typeof item.id === 'string' && typeof item.css === 'string' }).map(function (item) {
-        return { id: item.id, name: item.name || 'CSS theme', css: item.css, dark: item.dark === true }
+        return { id: item.id, name: item.name || 'CSS theme', css: item.css, dark: detectCssThemeDark(item.css) }
       }) : []
       if (!telegramThemes.length && saved.telegramTheme && saved.telegramTheme.colors) {
         telegramThemes.push({ id: 'legacy-telegram-theme', name: saved.telegramTheme.name || telegramWords.defaultName, colors: saved.telegramTheme.colors, background: saved.telegramTheme.background || '', wallpaper: normalizeWallpaper(saved.telegramTheme.wallpaper || (saved.theme === 'telegram' ? globalWallpaper : {})) })
@@ -223,7 +223,10 @@
 
   function themeForSelection(themeId, telegramId) {
     var cssTheme = prefs.cssThemes.filter(function (item) { return item.id === themeId })[0]
-    if (cssTheme) return { id: 'css', dark: cssTheme.dark, bg: cssTheme.dark ? '#242424' : '#FFFFFF', fg: cssTheme.dark ? '#FFFFFF' : '#222222', border: cssTheme.dark ? '#404040' : '#E2E2E2', defaultAccent: '#5181B8' }
+    if (cssTheme) {
+      cssTheme.dark = detectCssThemeDark(cssTheme.css)
+      return { id: 'css', dark: cssTheme.dark, bg: cssTheme.dark ? '#242424' : '#FFFFFF', fg: cssTheme.dark ? '#FFFFFF' : '#222222', border: cssTheme.dark ? '#404040' : '#E2E2E2', defaultAccent: cssThemeAccent(cssTheme, '#5181B8') }
+    }
     if (themeId === 'telegram' && telegramThemeById(telegramId)) {
       var colors = telegramThemeById(telegramId).colors
       var bg = solidColor(colors.windowBg || colors.dialogsBg || '#242424')
@@ -241,11 +244,54 @@
     return match ? rgbToHex(match.slice(1).map(Number)) : '#242424'
   }
 
+  function cssThemeValue(theme, name) {
+    if (!theme) return ''
+    var expression = new RegExp('(?:^|[;{])\\s*--' + name + '\\s*:\\s*([^;}]+)', 'g')
+    var match, value
+    while ((match = expression.exec(theme.css))) value = match[1].trim()
+    return value || ''
+  }
+
+  function cssThemeColor(theme, name, fallback) {
+    return cssThemeValue(theme, name) || fallback
+  }
+
+  function cssColorHex(value) {
+    if (/^#[0-9a-f]{6}$/i.test(value || '')) return value
+    var shortHex = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value || '')
+    if (shortHex) return '#' + shortHex[1] + shortHex[1] + shortHex[2] + shortHex[2] + shortHex[3] + shortHex[3]
+    var rgb = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(value || '')
+    return rgb ? rgbToHex([Number(rgb[1]), Number(rgb[2]), Number(rgb[3])]) : ''
+  }
+
+  function cssThemeAccent(theme, fallback) {
+    var names = ['ovk-accent', 'base-icon', 'link-fg']
+    for (var i = 0; i < names.length; i++) {
+      var color = cssColorHex(cssThemeValue(theme, names[i]))
+      if (color) return color
+    }
+    return fallback
+  }
+
+  function detectCssThemeDark(css) {
+    var theme = { css: css || '' }
+    var background = cssColorHex(cssThemeValue(theme, 'base-bg')) ||
+      cssColorHex(cssThemeValue(theme, 'layer-box-bg')) ||
+      cssColorHex(cssThemeValue(theme, 'dialogitem-bg'))
+    if (!background) return false
+    var rgb = hexToRgb(background)
+    return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000 < 140
+  }
+
   function currentAccent() {
     return accentForTheme(currentTheme())
   }
 
   function accentForTheme(theme) {
+    if (theme.id === 'css') {
+      var cssTheme = prefs.cssThemes.filter(function (item) { return item.id === prefs.theme })[0]
+      return cssThemeAccent(cssTheme, '#5181B8')
+    }
     if (theme.id === 'telegram') return theme.defaultAccent
     if (prefs.accentId === 'custom') return prefs.customColor
     var chosen = accents.filter(function (item) { return item.id === prefs.accentId })[0]
@@ -535,6 +581,7 @@
     var swatches = root.querySelector('.openvk-accent-list')
     if (!grid || !swatches) return
     root.classList.toggle('openvk-telegram-active', prefs.theme === 'telegram' && !!prefs.telegramTheme)
+    root.classList.toggle('openvk-css-active', prefs.cssThemes.some(function (item) { return item.id === prefs.theme }))
     grid.innerHTML = themes.map(function (theme) {
       var selected = theme.id === prefs.theme
       return '<button type="button" class="openvk-theme-option' + (selected ? ' -selected' : '') + '" data-theme="' + theme.id + '" aria-pressed="' + selected + '">' +
@@ -583,6 +630,7 @@
     })
     root.querySelectorAll('[data-accent]').forEach(function (button) {
       button.addEventListener('click', function () {
+        if (prefs.cssThemes.some(function (item) { return item.id === prefs.theme })) return
         var id = button.getAttribute('data-accent')
         if (id === 'custom') return openColorDialog()
         var item = accents.filter(function (color) { return color.id === id })[0]
@@ -649,11 +697,34 @@
   function openRenameCssThemeDialog(id) {
     var theme = prefs.cssThemes.filter(function (item) { return item.id === id })[0]
     if (!theme) return
-    var name = window.prompt(telegramWords.rename, theme.name)
-    if (!name || !name.trim()) return
-    theme.name = name.trim().slice(0, 60)
-    savePrefs()
-    document.querySelectorAll('.openvk-appearance').forEach(renderPanel)
+    var overlay = document.createElement('div')
+    overlay.className = 'openvk-color-overlay openvk-rename-css-theme-overlay'
+    overlay.innerHTML = '<section class="openvk-color-dialog openvk-rename-theme-dialog" role="dialog" aria-modal="true" aria-labelledby="openvk-rename-css-theme-title">' +
+      '<h2 id="openvk-rename-css-theme-title">' + telegramWords.rename + '</h2>' +
+      '<input type="text" maxlength="60" aria-label="' + telegramWords.rename + '">' +
+      '<div class="openvk-color-actions"><button type="button" data-action="cancel">' + words.cancel + '</button><button type="button" class="-primary" data-action="save">' + words.save + '</button></div></section>'
+    document.body.appendChild(overlay)
+    var input = overlay.querySelector('input')
+    input.value = theme.name
+    input.focus()
+    input.select()
+    function close() { overlay.remove(); document.removeEventListener('keydown', onKey) }
+    function save() {
+      var name = input.value.trim()
+      if (!name) { input.focus(); return }
+      theme.name = name.slice(0, 60)
+      savePrefs()
+      document.querySelectorAll('.openvk-appearance').forEach(renderPanel)
+      close()
+    }
+    function onKey(event) {
+      if (event.key === 'Escape') close()
+      else if (event.key === 'Enter') save()
+    }
+    document.addEventListener('keydown', onKey)
+    overlay.addEventListener('click', function (event) { if (event.target === overlay) close() })
+    overlay.querySelector('[data-action="cancel"]').addEventListener('click', close)
+    overlay.querySelector('[data-action="save"]').addEventListener('click', save)
   }
 
   function removeCssTheme(id) {
@@ -733,7 +804,7 @@
           if (error) return window.alert(error.message)
           if (!css.trim()) return window.alert(lang.appearance_css_invalid || 'Invalid or oversized CSS file')
           var id = 'css-' + Date.now() + '-' + Math.floor(Math.random() * 1000000)
-          var theme = { id: id, name: path.basename(paths[0], path.extname(paths[0])), css: resolveCssUrls(css, fileUrl(paths[0])), dark: currentTheme().dark }
+          var theme = { id: id, name: path.basename(paths[0], path.extname(paths[0])), css: resolveCssUrls(css, fileUrl(paths[0])), dark: detectCssThemeDark(css) }
           prefs.cssThemes.push(theme)
           prefs.theme = id
           wallpaper = wallpaperForSelection(id, '')
@@ -1280,27 +1351,20 @@
     getNotificationTheme: function () {
       var palette = lastPalette || {}
       var selectedCssTheme = prefs.cssThemes.filter(function (item) { return item.id === prefs.theme })[0]
-      function cssThemeColor(name, fallback) {
-        if (!selectedCssTheme) return fallback
-        var expression = new RegExp('(?:^|[;{])\\s*--' + name + '\\s*:\\s*([^;}]+)', 'g')
-        var match, value
-        while ((match = expression.exec(selectedCssTheme.css))) value = match[1].trim()
-        return value || fallback
-      }
-      var background = cssThemeColor('layer-box-bg', palette['layer-box-bg'] || currentTheme().bg)
+      var background = cssThemeColor(selectedCssTheme, 'layer-box-bg', palette['layer-box-bg'] || currentTheme().bg)
       return {
         squareAvatars: prefs.squareAvatars,
         background: background,
-        header: cssThemeColor('layer-box-header-bg', palette['layer-box-header-bg'] || background),
-        border: cssThemeColor('header-border', palette['header-border'] || currentTheme().border),
-        foreground: cssThemeColor('base-fg', palette['base-fg'] || currentTheme().fg),
-        muted: cssThemeColor('gray-fg', palette['gray-fg'] || currentTheme().fg),
-        accent: cssThemeColor('ovk-accent', cssThemeColor('base-icon', currentAccent())),
-        title: selectedCssTheme ? cssThemeColor('win32-window-title-fg', '#fff') : null,
+        header: cssThemeColor(selectedCssTheme, 'layer-box-header-bg', palette['layer-box-header-bg'] || background),
+        border: cssThemeColor(selectedCssTheme, 'header-border', palette['header-border'] || currentTheme().border),
+        foreground: cssThemeColor(selectedCssTheme, 'base-fg', palette['base-fg'] || currentTheme().fg),
+        muted: cssThemeColor(selectedCssTheme, 'gray-fg', palette['gray-fg'] || currentTheme().fg),
+        accent: cssThemeAccent(selectedCssTheme, currentAccent()),
+        title: selectedCssTheme ? cssThemeColor(selectedCssTheme, 'win32-window-title-fg', '#fff') : null,
         titleWeight: selectedCssTheme ? '700' : null,
-        titleFont: selectedCssTheme ? cssThemeColor('win32-window-title-font-family', null) : null,
-        close: selectedCssTheme ? cssThemeColor('win32-window-title-btn-fg', '#fff') : null,
-        input: cssThemeColor('nt-input-bg', cssThemeColor('input-bg', palette['input-bg'] || background)),
+        titleFont: selectedCssTheme ? cssThemeColor(selectedCssTheme, 'win32-window-title-font-family', null) : null,
+        close: selectedCssTheme ? cssThemeColor(selectedCssTheme, 'win32-window-title-btn-fg', '#fff') : null,
+        input: cssThemeColor(selectedCssTheme, 'nt-input-bg', cssThemeColor(selectedCssTheme, 'input-bg', palette['input-bg'] || background)),
         reply: rgba(solidColor(background), .92)
       }
     },

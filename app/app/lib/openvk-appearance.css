@@ -250,7 +250,9 @@ body.openvk-theme-night .im_info_attach_video_views {
 }
 
 .openvk-telegram-active .openvk-accent-heading:first-of-type,
-.openvk-telegram-active .openvk-accent-list {
+.openvk-telegram-active .openvk-accent-list,
+.openvk-css-active .openvk-accent-heading:first-of-type,
+.openvk-css-active .openvk-accent-list {
   display: none;
 }
 
