@@ -557,6 +557,8 @@ if (process.type == 'renderer') {
     appearance_theme_day: "День",
     appearance_theme_tinted: "Кольорова",
     appearance_theme_night: "Нічна",
+    appearance_make_dark_theme: "Зробити темною темою",
+    appearance_make_light_theme: "Зробити світлою темою",
     appearance_color_blue: "Синій",
     appearance_color_lightblue: "Блакитний",
     appearance_color_green: "Зелений",

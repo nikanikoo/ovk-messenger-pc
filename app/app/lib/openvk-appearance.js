@@ -28,6 +28,8 @@
     lightness: lang.appearance_lightness,
     cancel: lang.appearance_cancel,
     save: lang.appearance_save,
+    makeDarkTheme: lang.appearance_make_dark_theme || 'Make dark theme',
+    makeLightTheme: lang.appearance_make_light_theme || 'Make light theme',
     themes: [lang.appearance_theme_classic, lang.appearance_theme_day, lang.appearance_theme_tinted, lang.appearance_theme_night],
     accents: [lang.appearance_color_blue, lang.appearance_color_lightblue, lang.appearance_color_green, lang.appearance_color_pink, lang.appearance_color_orange, lang.appearance_color_purple, lang.appearance_color_red, lang.appearance_color_darkgray, lang.appearance_color_yellow]
   }
@@ -147,6 +149,10 @@
         telegramThemes.push({ id: 'legacy-telegram-theme', name: saved.telegramTheme.name || telegramWords.defaultName, colors: saved.telegramTheme.colors, background: saved.telegramTheme.background || '', wallpaper: normalizeWallpaper(saved.telegramTheme.wallpaper || (saved.theme === 'telegram' ? globalWallpaper : {})) })
       }
       var selectedTelegram = telegramThemes.filter(function (item) { return item.id === saved.telegramThemeId })[0] || telegramThemes[0] || null
+      var lightThemeSelection = normalizeThemeSelection(saved.lightThemeSelection, telegramThemes, cssThemes) ||
+        normalizeThemeSelection({ id: saved.lastLightTheme }, telegramThemes, cssThemes) || { id: 'classic', telegramId: '' }
+      var darkThemeSelection = normalizeThemeSelection(saved.darkThemeSelection, telegramThemes, cssThemes) ||
+        normalizeThemeSelection({ id: saved.lastDarkTheme }, telegramThemes, cssThemes) || { id: 'night', telegramId: '' }
       return {
         theme: saved.theme === 'telegram' && selectedTelegram ? 'telegram' : cssThemes.some(function (item) { return item.id === saved.theme }) ? saved.theme : themes.some(function (item) { return item.id === saved.theme }) ? saved.theme : 'classic',
         telegramThemes: telegramThemes,
@@ -158,12 +164,25 @@
         customColor: /^#[0-9a-f]{6}$/i.test(saved.customColor || '') ? saved.customColor.toUpperCase() : '#5181B8',
         squareAvatars: saved.squareAvatars === true,
         squareBadges: saved.squareBadges === true,
-        lastLightTheme: saved.lastLightTheme === 'day' || (!saved.lastLightTheme && saved.theme === 'day') ? 'day' : 'classic',
-        lastDarkTheme: saved.lastDarkTheme === 'tinted' || (!saved.lastDarkTheme && saved.theme === 'tinted') ? 'tinted' : 'night'
+        lightThemeSelection: lightThemeSelection,
+        darkThemeSelection: darkThemeSelection
       }
     } catch (_) {
-      return { theme: 'classic', telegramThemes: [], cssThemes: [], telegramThemeId: '', telegramTheme: null, accent: '', accentId: '', customColor: '#5181B8', squareAvatars: false, squareBadges: false, lastLightTheme: 'classic', lastDarkTheme: 'night' }
+      return { theme: 'classic', telegramThemes: [], cssThemes: [], telegramThemeId: '', telegramTheme: null, accent: '', accentId: '', customColor: '#5181B8', squareAvatars: false, squareBadges: false, lightThemeSelection: { id: 'classic', telegramId: '' }, darkThemeSelection: { id: 'night', telegramId: '' } }
     }
+  }
+
+  function normalizeThemeSelection(selection, telegramThemes, cssThemes) {
+    if (!selection || typeof selection !== 'object') return null
+    var id = selection.id || selection.theme
+    var telegramId = selection.telegramId || ''
+    if (id === 'telegram') return telegramThemes.some(function (item) { return item.id === telegramId }) ? { id: id, telegramId: telegramId } : null
+    if (themes.some(function (item) { return item.id === id }) || cssThemes.some(function (item) { return item.id === id })) return { id: id, telegramId: '' }
+    return null
+  }
+
+  function sameThemeSelection(left, right) {
+    return !!left && !!right && left.id === right.id && (left.id !== 'telegram' || left.telegramId === right.telegramId)
   }
 
   var prefs = readPrefs()
@@ -535,6 +554,18 @@
       checkboxMarkup('openvk-wallpaper-tile', wallpaperWords.tile) +
       checkboxMarkup('openvk-square-avatars-control', lang.appearance_square_avatars) +
       checkboxMarkup('openvk-square-badges-control', lang.appearance_square_badges)
+    var themeGrid = root.querySelector('.openvk-theme-grid')
+    themeGrid.addEventListener('wheel', function (event) {
+      if (event.ctrlKey) return
+      var maxScroll = themeGrid.scrollWidth - themeGrid.clientWidth
+      if (maxScroll <= 0) return
+      var delta = Math.abs(event.deltaY) > Math.abs(event.deltaX) ? event.deltaY : event.deltaX
+      if (!delta) return
+      var nextScroll = Math.max(0, Math.min(maxScroll, themeGrid.scrollLeft + delta))
+      if (nextScroll === themeGrid.scrollLeft) return
+      event.preventDefault()
+      themeGrid.scrollLeft = nextScroll
+    }, { passive: false })
     renderPanel(root)
     installThemeMenu(root)
     onCheckbox(root.querySelector('.openvk-square-avatars-control'), function () {
@@ -596,9 +627,11 @@
     }).join('')
     grid.querySelectorAll('[data-theme]:not([data-telegram-id])').forEach(function (button) {
       var custom = prefs.cssThemes.filter(function (item) { return item.id === button.getAttribute('data-theme') })[0]
-      if (!custom) return
-      button.querySelector('.openvk-theme-name').textContent = custom.name
-      button.addEventListener('contextmenu', function (event) { openCssThemeContextMenu(event, custom.id) })
+      if (custom) button.querySelector('.openvk-theme-name').textContent = custom.name
+      button.addEventListener('contextmenu', function (event) {
+        if (custom) openCssThemeContextMenu(event, custom.id)
+        else openPresetThemeContextMenu(event, button.getAttribute('data-theme'))
+      })
     })
     grid.querySelectorAll('[data-telegram-id]').forEach(function (button) {
       var imported = prefs.telegramThemes.filter(function (item) { return item.id === button.getAttribute('data-telegram-id') })[0]
@@ -620,8 +653,10 @@
           if (!imported) return
           prefs.telegramThemeId = telegramId
           prefs.telegramTheme = imported
-        } else if (themeForSelection(themeId).dark) prefs.lastDarkTheme = themeId
-        else prefs.lastLightTheme = themeId
+        } else {
+          prefs.telegramThemeId = ''
+          prefs.telegramTheme = null
+        }
         prefs.theme = themeId
         wallpaper = wallpaperForSelection(themeId, telegramId)
         savePrefs()
@@ -652,7 +687,9 @@
     var menu = document.createElement('div')
     menu.className = 'openvk-theme-context-menu'
     menu.setAttribute('role', 'menu')
-    menu.innerHTML = '<button type="button" role="menuitem" data-action="rename">' + telegramWords.rename + '</button>' +
+    menu.innerHTML = '<button type="button" role="menuitem" data-action="make-dark">' + words.makeDarkTheme + '</button>' +
+      '<button type="button" role="menuitem" data-action="make-light">' + words.makeLightTheme + '</button>' +
+      '<button type="button" role="menuitem" data-action="rename">' + telegramWords.rename + '</button>' +
       '<button type="button" role="menuitem" data-action="remove">' + telegramWords.remove + '</button>'
     document.body.appendChild(menu)
     menu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8)) + 'px'
@@ -666,6 +703,14 @@
     function onKey(e) { if (e.key === 'Escape') close() }
     document.addEventListener('mousedown', onOutside, true)
     document.addEventListener('keydown', onKey)
+    menu.querySelector('[data-action="make-dark"]').addEventListener('click', function () {
+      close()
+      assignThemeRole('dark', 'telegram', id)
+    })
+    menu.querySelector('[data-action="make-light"]').addEventListener('click', function () {
+      close()
+      assignThemeRole('light', 'telegram', id)
+    })
     menu.querySelector('[data-action="rename"]').addEventListener('click', function () {
       close()
       openRenameThemeDialog(id)
@@ -682,16 +727,54 @@
     if (previous) previous.remove()
     var menu = document.createElement('div')
     menu.className = 'openvk-theme-context-menu'
-    menu.innerHTML = '<button type="button" data-action="export">' + (lang.appearance_export_css || 'Export CSS') + '</button><button type="button" data-action="rename">' + telegramWords.rename + '</button><button type="button" data-action="remove">' + telegramWords.remove + '</button>'
+    menu.innerHTML = '<button type="button" data-action="make-dark">' + words.makeDarkTheme + '</button><button type="button" data-action="make-light">' + words.makeLightTheme + '</button>' +
+      '<button type="button" data-action="export">' + (lang.appearance_export_css || 'Export CSS') + '</button><button type="button" data-action="rename">' + telegramWords.rename + '</button><button type="button" data-action="remove">' + telegramWords.remove + '</button>'
     document.body.appendChild(menu)
     menu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8)) + 'px'
     menu.style.top = Math.max(8, Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8)) + 'px'
     function close() { menu.remove(); document.removeEventListener('mousedown', onOutside, true) }
     function onOutside(e) { if (!menu.contains(e.target)) close() }
     document.addEventListener('mousedown', onOutside, true)
+    menu.querySelector('[data-action="make-dark"]').addEventListener('click', function () { close(); assignThemeRole('dark', id, '') })
+    menu.querySelector('[data-action="make-light"]').addEventListener('click', function () { close(); assignThemeRole('light', id, '') })
     menu.querySelector('[data-action="export"]').addEventListener('click', function () { close(); exportCssTheme(id) })
     menu.querySelector('[data-action="rename"]').addEventListener('click', function () { close(); openRenameCssThemeDialog(id) })
     menu.querySelector('[data-action="remove"]').addEventListener('click', function () { close(); removeCssTheme(id) })
+  }
+
+  function openPresetThemeContextMenu(event, id) {
+    event.preventDefault()
+    var previous = document.querySelector('.openvk-theme-context-menu')
+    if (previous) previous.remove()
+    var menu = document.createElement('div')
+    menu.className = 'openvk-theme-context-menu'
+    menu.setAttribute('role', 'menu')
+    menu.innerHTML = '<button type="button" role="menuitem" data-action="make-dark">' + words.makeDarkTheme + '</button>' +
+      '<button type="button" role="menuitem" data-action="make-light">' + words.makeLightTheme + '</button>'
+    document.body.appendChild(menu)
+    menu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8)) + 'px'
+    menu.style.top = Math.max(8, Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8)) + 'px'
+    function close() { menu.remove(); document.removeEventListener('mousedown', onOutside, true); document.removeEventListener('keydown', onKey) }
+    function onOutside(e) { if (!menu.contains(e.target)) close() }
+    function onKey(e) { if (e.key === 'Escape') close() }
+    document.addEventListener('mousedown', onOutside, true)
+    document.addEventListener('keydown', onKey)
+    menu.querySelector('[data-action="make-dark"]').addEventListener('click', function () { close(); assignThemeRole('dark', id, '') })
+    menu.querySelector('[data-action="make-light"]').addEventListener('click', function () { close(); assignThemeRole('light', id, '') })
+  }
+
+  function assignThemeRole(role, id, telegramId) {
+    var selection = {
+      id: id,
+      telegramId: id === 'telegram' ? telegramId : ''
+    }
+    var targetKey = role === 'dark' ? 'darkThemeSelection' : 'lightThemeSelection'
+    var otherKey = role === 'dark' ? 'lightThemeSelection' : 'darkThemeSelection'
+    prefs[targetKey] = selection
+    if (sameThemeSelection(selection, prefs[otherKey])) {
+      prefs[otherKey] = role === 'dark' ? { id: 'classic', telegramId: '' } : { id: 'night', telegramId: '' }
+    }
+    savePrefs()
   }
 
   function openRenameCssThemeDialog(id) {
@@ -730,6 +813,8 @@
   function removeCssTheme(id) {
     var wasActive = prefs.theme === id
     prefs.cssThemes = prefs.cssThemes.filter(function (item) { return item.id !== id })
+    if (prefs.lightThemeSelection.id === id) prefs.lightThemeSelection = { id: 'classic', telegramId: '' }
+    if (prefs.darkThemeSelection.id === id) prefs.darkThemeSelection = { id: 'night', telegramId: '' }
     if (wasActive) prefs.theme = 'classic'
     wallpaper = wallpaperForSelection(prefs.theme, prefs.telegramThemeId)
     savePrefs()
@@ -858,7 +943,18 @@
       prefs.telegramTheme = prefs.telegramThemes[0] || null
       prefs.telegramThemeId = prefs.telegramTheme ? prefs.telegramTheme.id : ''
     }
-    if (wasActive && !prefs.telegramTheme) prefs.theme = wasDark ? prefs.lastDarkTheme : prefs.lastLightTheme
+    if (prefs.lightThemeSelection.id === 'telegram' && prefs.lightThemeSelection.telegramId === id) {
+      prefs.lightThemeSelection = { id: 'classic', telegramId: '' }
+    }
+    if (prefs.darkThemeSelection.id === 'telegram' && prefs.darkThemeSelection.telegramId === id) {
+      prefs.darkThemeSelection = { id: 'night', telegramId: '' }
+    }
+    if (wasActive && !prefs.telegramTheme) {
+      var fallback = wasDark ? prefs.lightThemeSelection : prefs.darkThemeSelection
+      prefs.theme = fallback.id
+      prefs.telegramThemeId = fallback.telegramId || ''
+      prefs.telegramTheme = fallback.id === 'telegram' ? telegramThemeById(fallback.telegramId) : null
+    }
     wallpaper = wallpaperForSelection(prefs.theme, prefs.telegramThemeId)
     savePrefs()
     applyTheme()
@@ -1170,8 +1266,10 @@
         if (selectedTheme === 'telegram') {
           prefs.telegramThemeId = selectedTelegramId
           prefs.telegramTheme = telegramThemeById(selectedTelegramId)
-        } else if (themeForSelection(selectedTheme).dark) prefs.lastDarkTheme = selectedTheme
-        else prefs.lastLightTheme = selectedTheme
+        } else {
+          prefs.telegramThemeId = ''
+          prefs.telegramTheme = null
+        }
         wallpaper = nextWallpaper
         saveWallpaper()
         savePrefs()
@@ -1369,7 +1467,14 @@
       }
     },
     toggleDarkTheme: function () {
-      prefs.theme = currentTheme().dark ? prefs.lastLightTheme : prefs.lastDarkTheme
+      var current = { id: prefs.theme, telegramId: prefs.theme === 'telegram' ? prefs.telegramThemeId : '' }
+      var matchesDark = sameThemeSelection(current, prefs.darkThemeSelection)
+      var matchesLight = sameThemeSelection(current, prefs.lightThemeSelection)
+      var isDark = matchesDark && !matchesLight ? true : matchesLight && !matchesDark ? false : currentTheme().dark
+      var target = isDark ? prefs.lightThemeSelection : prefs.darkThemeSelection
+      prefs.theme = target.id
+      prefs.telegramThemeId = target.telegramId || ''
+      prefs.telegramTheme = target.id === 'telegram' ? telegramThemeById(target.telegramId) : null
       wallpaper = wallpaperForSelection(prefs.theme, prefs.telegramThemeId)
       savePrefs()
       applyTheme()

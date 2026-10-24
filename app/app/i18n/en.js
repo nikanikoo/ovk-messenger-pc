@@ -557,6 +557,8 @@ if (process.type == 'renderer') {
     appearance_theme_day: "Day",
     appearance_theme_tinted: "Tinted",
     appearance_theme_night: "Night",
+    appearance_make_dark_theme: "Make dark theme",
+    appearance_make_light_theme: "Make light theme",
     appearance_color_blue: "Blue",
     appearance_color_lightblue: "Light blue",
     appearance_color_green: "Green",
