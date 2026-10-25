@@ -1,5 +1,5 @@
 {
-  "build": 3,
+  "build": 4,
   "main": "main.js",
   "config": {
     "branch": "master",
@@ -8,7 +8,7 @@
   "description": "Simple and Convenient Messaging App for OpenVK",
   "name": "OpenVK",
   "homepage": "https://t.me/openvkmobile",
-  "version": "26.0.2",
+  "version": "26.0.3",
   "author": {
     "name": "Evgeny Zinoviev",
     "url": "https://vk.com/ez",
