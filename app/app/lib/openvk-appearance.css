@@ -88,6 +88,10 @@
   cursor: pointer;
 }
 
+.openvk-theme-choice-import + .openvk-theme-choice-import {
+  margin-top: 10px;
+}
+
 .openvk-theme-choice-import:hover {
   background: var(--context-menu-item-hover-bg, rgba(127, 127, 127, .12));
 }
@@ -155,6 +159,23 @@ body.openvk-theme-night .im_info_attach_video_views {
   flex-wrap: nowrap;
   justify-content: flex-start;
   overflow-x: auto;
+  scrollbar-color: var(--ovk-accent, #5181b8) var(--base-bg, #fff);
+  scrollbar-width: thin;
+}
+
+.openvk-theme-grid::-webkit-scrollbar { height: 8px; }
+.openvk-theme-grid::-webkit-scrollbar-track {
+  background: var(--base-bg, #fff);
+  border-radius: 4px;
+}
+.openvk-theme-grid::-webkit-scrollbar-thumb {
+  min-width: 28px;
+  background: var(--ovk-accent, #5181b8);
+  border: 2px solid var(--base-bg, #fff);
+  border-radius: 4px;
+}
+.openvk-theme-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--base-icon-hover, var(--ovk-accent, #5181b8));
 }
 
 .openvk-theme-option:first-child { margin-left: auto; }
@@ -246,7 +267,9 @@ body.openvk-theme-night .im_info_attach_video_views {
 }
 
 .openvk-telegram-active .openvk-accent-heading:first-of-type,
-.openvk-telegram-active .openvk-accent-list {
+.openvk-telegram-active .openvk-accent-list,
+.openvk-css-active .openvk-accent-heading:first-of-type,
+.openvk-css-active .openvk-accent-list {
   display: none;
 }
 

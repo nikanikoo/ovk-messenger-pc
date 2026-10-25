@@ -91,6 +91,10 @@ function applyAppearance(appearance) {
     '--nt-fg': appearance.foreground,
     '--nt-muted': appearance.muted,
     '--nt-accent': appearance.accent,
+    '--nt-title-fg': appearance.title,
+    '--nt-title-weight': appearance.titleWeight,
+    '--nt-title-font': appearance.titleFont,
+    '--nt-close-fg': appearance.close,
     '--nt-input-bg': appearance.input,
     '--nt-reply-bg': appearance.reply
   }

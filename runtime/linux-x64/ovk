@@ -1,4 +1,4 @@
 #!/bin/sh
 APP_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 export LD_LIBRARY_PATH="$APP_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$APP_DIR/vk.bin" "$@"
+exec "$APP_DIR/ovk.bin" "$@"

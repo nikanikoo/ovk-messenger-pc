@@ -10435,7 +10435,7 @@ module.exports = function(e) {
             var t = v.default.name(this.firstName, 1 == this.sex ? 1 : 0, e);
             return this.lastName && (t += " " + v.default.surname(this.lastName, 1 == this.sex ? 1 : 0, e)), t
           }
-          return this.firstName + " " + this.lastName
+          return this.firstName + (this.lastName ? " " + this.lastName : "")
         }
       }, {
         key: "getFirstName",
@@ -10445,7 +10445,7 @@ module.exports = function(e) {
       }, {
         key: "getShortName",
         value: function() {
-          return this.isEmail() ? this.firstName : this.firstName + " " + this.lastName.substring(0, 1) + "."
+          return this.isEmail() || !this.lastName ? this.firstName : this.firstName + " " + this.lastName.substring(0, 1) + "."
         }
       }, {
         key: "getPhoto50",
@@ -15404,7 +15404,7 @@ module.exports = function(e) {
         movable: !1,
         hasShadow: !1,
         transparent: !0,
-        fullscreenable: !1,
+        fullscreenable: !0,
         alwaysOnTop: !0
       }, (0, O.getFullScreenBounds)()), (0, _.isWindows)()) {
       var n = (0, O.getFullScreenBounds)(),
@@ -15500,7 +15500,7 @@ module.exports = function(e) {
         return n = o = i(this, (e = t.__proto__ || Object.getPrototypeOf(t)).call.apply(e, [this].concat(u))), o._didFinishLoad = function() {
           o.peerId = null, o.groupId = null, o.win.setSkipTaskbar(!0), window.mainWindow.isVisible() && !window.mainWindow.isMinimized() && window.mainWindow.focus(), setTimeout(function() {
             window.mainWindow.isVisible() && !window.mainWindow.isMinimized() && window.mainWindow.focus()
-          }), L.isAeroGlassEnabled() && !o.needToOpen && o.win.minimize(), !(0, O.transparencyOnWindowsSupported)() && !(0, _.isWindows8)() || o.needToOpen || o.win.setPosition(-1e3, -1e3), o.openCallback && (o.openCallback(), o.openCallback = null), o.windowLoaded = !0
+          }), (0, _.isWindows)() && L.isAeroGlassEnabled && L.isAeroGlassEnabled() && !o.needToOpen && o.win.minimize(), !(0, O.transparencyOnWindowsSupported)() && !(0, _.isWindows8)() || o.needToOpen || o.win.setPosition(-1e3, -1e3), o.openCallback && (o.openCallback(), o.openCallback = null), o.windowLoaded = !0
         }, o.cancelLoadRequest = function() {
           o.loadRequest && (o.loadRequest.abort(), delete o.loadRequest)
         }, a = n, i(o, a)
@@ -15722,9 +15722,32 @@ module.exports = function(e) {
               o = 0,
               r = void 0; - 1 != e.peerId && (r = I.default.getDialogData(e.groupId, e.peerId));
             var i = !1;
-            if (r ? (t.peerId && t.groupId == e.groupId && t.peerId == e.peerId && "photo" == t.type && !t.profilePhotos || Object.assign(n, t._getPhotosAndUsers(r.photos)), o = r.photos.indexOf(e.photo), i = !0) : e.photos && e.photos.length && (Object.assign(n, t._getPhotosAndUsers(e.photos)), o = e.photos.indexOf(e.photo), i = !0), !i || -1 == o) {
-              var a = e.photo.toObject();
-              a._apiObject = e.photo.getAPIObject(), n.photos = [a], n.users = {}, n.users[e.photo.owner_id] = T.default.getUserOrFake(e.photo.owner_id).toObject(), o = 0
+            var a = function(t) {
+              return t.findIndex(function(t) {
+                return t === e.photo || t.id == e.photo.id && t.owner_id == e.photo.owner_id
+              })
+            };
+            var d = function(t) {
+              var n = [],
+                o = Object.create(null);
+              for (var r = 0; r < t.length; r++) {
+                var i = t[r],
+                  a = null != i.id && null != i.owner_id ? i.owner_id + "_" + i.id : null;
+                (null === a || !o[a]) && (null !== a && (o[a] = !0), n.push(i))
+              }
+              return n
+            };
+            if (r && r.photos && r.photos.length) {
+              var f = d(r.photos);
+              Object.assign(n, t._getPhotosAndUsers(f)), o = a(f), i = -1 != o
+            }
+            if ((!i || -1 == o) && e.photos && e.photos.length) {
+              var p = d(e.photos);
+              o = a(p), -1 != o && (Object.assign(n, t._getPhotosAndUsers(p)), i = !0)
+            }
+            if (!i || -1 == o) {
+              var s = e.photo.toObject();
+              s._apiObject = e.photo.getAPIObject(), n.photos = [s], n.users = {}, n.users[e.photo.owner_id] = T.default.getUserOrFake(e.photo.owner_id).toObject(), o = 0
             }
             n.photoIndex = o, t.peerId = e.peerId, t.groupId = e.groupId, t.type = "photo", t.profilePhotos = !1, t.bridge.dispatch(n)
           }, "photo" != this.type && !this.maximized && this.win.isVisible())
@@ -23796,7 +23819,7 @@ module.exports = function(e) {
         }, o.onMinimize = function() {
           ((0, C.transparencyOnWindowsSupported)() || (0, g.isWindows8)()) && c.default.isMaximized() && (0, C.moveWindowOutOfAllDisplays)()
         }, o.onBlur = function() {
-          c.default.isMaximized() || !curWindow.isVisible() || curWindow.isMinimized() || c.default.maximizeStarted || c.default.normalizeStarted || o.saveFloatedWindowBounds(), c.default.isMaximized() && o.windowShowDone && o.onceShown && !o.saveDialogIsActive && o.callCloseWindow()
+          c.default.isMaximized() || !curWindow.isVisible() || curWindow.isMinimized() || c.default.maximizeStarted || c.default.normalizeStarted || o.saveFloatedWindowBounds(), c.default.isMaximized() && o.windowShowDone && o.onceShown && !c.default.maximizeStarted && !c.default.normalizeStarted && !o.saveDialogIsActive && o.callCloseWindow()
         }, o.onMove = function() {
           (0, m.dispatch)("window_moved")
         }, o.onEnterHTMLFullScreen = function() {
@@ -23865,7 +23888,7 @@ module.exports = function(e) {
             }
             if (t.showWindow) {
               var d = function() {
-                  remoteLog("VC resetWindowBounds"), r ? curWindow.setBounds((0, C.getFullScreenBounds)()) : f.resetFloatedWindowBounds()
+                  remoteLog("VC resetWindowBounds"), r ? (0, g.isLinux)() || (0, g.isMac)() || curWindow.setBounds((0, C.getFullScreenBounds)()) : f.resetFloatedWindowBounds()
                 },
                 f = e;
               remoteLog("VC 1"), o != r && (r ? e.makeWindowMaximized() : e.makeWindowFloated()), curWindow.show(), remoteLog("VC 2"), cancelAnimationFrame(e.moveRAF), e.moveRAF = requestAnimationFrame(d), e.windowShowDone = !0, e.onceShown = !0
@@ -23904,7 +23927,7 @@ module.exports = function(e) {
       }, {
         key: "normalizeWindow",
         value: function() {
-          s("VC normalizeWindow"), (0, g.addClass)(document.body, "-in-transition"), (0, m.dispatch)("normalize_started");
+          s("VC normalizeWindow"), ((0, g.isLinux)() || (0, g.isMac)()) && curWindow.isFullScreen() && curWindow.setFullScreen(!1), (0, g.addClass)(document.body, "-in-transition"), (0, m.dispatch)("normalize_started");
           var e = c.default.getType();
           "photo" == e ? k.default.setBool("photo_viewer_maximized", !1) : "video" == e && k.default.setBool("video_player_maximized", !1)
         }
@@ -23944,14 +23967,24 @@ module.exports = function(e) {
       }, {
         key: "makeWindowMaximized",
         value: function(e) {
-          s("VC makeWindowMaximized"), void 0 !== e && 1 !== e || (curWindow.setAlwaysOnTop(!0), curWindow.setMovable(!1), curWindow.setResizable(!1), curWindow.setBackgroundColor((0, C.getFullscreenBackgroundColor)()), (0, g.addClass)(document.body, "v_half_max")), void 0 !== e && 2 !== e || (this.saveFloatedWindowBounds(), (0, g.isWindows)() ? (0, C.moveWindowOutOfAllDisplays)({
-            makeFullScreen: !0
-          }) : curWindow.setBounds((0, C.getFullScreenBounds)()), curWindow.setBackgroundColor((0, C.getFullscreenBackgroundColor)()), (0, g.addClass)(document.body, "v_max")), void 0 !== e && 3 !== e || ((0, m.dispatch)("mode", {
-            maximized: !0
-          }), E.dispatch({
-            name: "maximized",
-            maximized: !0
-          }), curWindow.setBounds((0, C.getFullScreenBounds)()), curWindow.setBackgroundColor((0, C.getFullscreenBackgroundColor)()))
+          s("VC makeWindowMaximized");
+          var t = (0, g.isLinux)() || (0, g.isMac)();
+          if (void 0 === e || 1 === e) {
+            t || curWindow.setAlwaysOnTop(!0), curWindow.setMovable(!1), curWindow.setResizable(!1), curWindow.setBackgroundColor((0, C.getFullscreenBackgroundColor)()), (0, g.addClass)(document.body, "v_half_max")
+          }
+          if (void 0 === e || 2 === e) {
+            this.saveFloatedWindowBounds(), (0, g.isWindows)() ? (0, C.moveWindowOutOfAllDisplays)({
+              makeFullScreen: !0
+            }) : curWindow.setBounds((0, C.getFullScreenBounds)()), t && (curWindow.setAlwaysOnTop(!1), curWindow.setFullScreen(!0)), curWindow.setBackgroundColor((0, C.getFullscreenBackgroundColor)()), (0, g.addClass)(document.body, "v_max")
+          }
+          if (void 0 === e || 3 === e) {
+            (0, m.dispatch)("mode", {
+              maximized: !0
+            }), E.dispatch({
+              name: "maximized",
+              maximized: !0
+            }), t || curWindow.setBounds((0, C.getFullScreenBounds)()), curWindow.setBackgroundColor((0, C.getFullscreenBackgroundColor)())
+          }
         }
       }, {
         key: "makeWindowFloated",
@@ -23968,7 +24001,7 @@ module.exports = function(e) {
       }, {
         key: "closeWindow",
         value: function() {
-          c.default.isMaximized() || this.saveFloatedWindowBounds(), (0, C.moveWindowOutOfAllDisplays)(), this.closeWindowCrossPlatform(), (0, m.dispatch)("hide"), this.windowShowDone = !1
+          c.default.isMaximized() || this.saveFloatedWindowBounds(), ((0, g.isLinux)() || (0, g.isMac)()) && curWindow.isFullScreen() || (0, C.moveWindowOutOfAllDisplays)(), this.closeWindowCrossPlatform(), (0, m.dispatch)("hide"), this.windowShowDone = !1
         }
       }, {
         key: "closeWindowCrossPlatform",
@@ -39750,7 +39783,7 @@ module.exports = function(e) {
   }
 
   function p() {
-    return !D.default.isset("photo_viewer_maximized") || D.default.getBool("photo_viewer_maximized")
+    return (0, y.isLinux)() || (0, y.isMac)() || !D.default.isset("photo_viewer_maximized") || D.default.getBool("photo_viewer_maximized")
   }
 
   function h() {
@@ -99769,7 +99802,7 @@ module.exports = function(e) {
             t = this.props.area,
             n = this.props.photo;
           if (!n) return this.renderError();
-          var o = f.PhotoAttachment.GetByMaxSize(n.sizes, e.width, e.height);
+          var o = f.PhotoAttachment.GetBestQuality(n.sizes);
           if (!o) return this.renderError();
           var r = {},
             i = {},

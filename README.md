@@ -34,7 +34,7 @@ Downloads are portable application folders or archives, not installers. Keep the
 2. Extract the entire archive to a folder.
 3. Start the client:
    - **Windows:** run `ovk.exe` from the extracted folder.
-   - **Linux:** open a terminal in the extracted folder and run `./vk`.
+   - **Linux:** open a terminal in the extracted folder and run `./ovk`.
 
 ## 💻 Platforms
 

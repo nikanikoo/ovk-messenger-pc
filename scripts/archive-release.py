@@ -29,7 +29,7 @@ def archive(target, build_name=None, archive_name=None):
             for file in files:
                 name = (Path(archive_root) / file.relative_to(source)).as_posix()
                 info = tar_file.gettarinfo(str(file), arcname=name)
-                info.mode = 0o755 if file in (source / "vk", source / "vk.bin") else 0o644
+                info.mode = 0o755 if file in (source / "ovk", source / "ovk.bin") else 0o644
                 with file.open("rb") as stream:
                     tar_file.addfile(info, stream)
     else:

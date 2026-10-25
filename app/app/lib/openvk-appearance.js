@@ -28,6 +28,8 @@
     lightness: lang.appearance_lightness,
     cancel: lang.appearance_cancel,
     save: lang.appearance_save,
+    makeDarkTheme: lang.appearance_make_dark_theme || 'Make dark theme',
+    makeLightTheme: lang.appearance_make_light_theme || 'Make light theme',
     themes: [lang.appearance_theme_classic, lang.appearance_theme_day, lang.appearance_theme_tinted, lang.appearance_theme_night],
     accents: [lang.appearance_color_blue, lang.appearance_color_lightblue, lang.appearance_color_green, lang.appearance_color_pink, lang.appearance_color_orange, lang.appearance_color_purple, lang.appearance_color_red, lang.appearance_color_darkgray, lang.appearance_color_yellow]
   }
@@ -76,6 +78,7 @@
   var globalWallpaper = readWallpaper()
   var wallpaper = globalWallpaper
   var pendingTelegramThemes = Object.create(null)
+  var cssThemesStyle
   function fileUrl(filePath) {
     var normalized = filePath.replace(/\\/g, '/')
     return 'file://' + (/^[A-Za-z]:/.test(normalized) ? '/' : '') + normalized.split('/').map(function (part, index) {
@@ -139,13 +142,21 @@
         var oldWallpaper = saved.theme === 'telegram' && item.id === saved.telegramThemeId ? globalWallpaper : {}
         return { id: item.id, name: item.name || telegramWords.defaultName, colors: item.colors, background: item.background || '', wallpaper: normalizeWallpaper(item.wallpaper || oldWallpaper) }
       }) : []
+      var cssThemes = Array.isArray(saved.cssThemes) ? saved.cssThemes.filter(function (item) { return item && typeof item.id === 'string' && typeof item.css === 'string' }).map(function (item) {
+        return { id: item.id, name: item.name || 'CSS theme', css: item.css, dark: detectCssThemeDark(item.css) }
+      }) : []
       if (!telegramThemes.length && saved.telegramTheme && saved.telegramTheme.colors) {
         telegramThemes.push({ id: 'legacy-telegram-theme', name: saved.telegramTheme.name || telegramWords.defaultName, colors: saved.telegramTheme.colors, background: saved.telegramTheme.background || '', wallpaper: normalizeWallpaper(saved.telegramTheme.wallpaper || (saved.theme === 'telegram' ? globalWallpaper : {})) })
       }
       var selectedTelegram = telegramThemes.filter(function (item) { return item.id === saved.telegramThemeId })[0] || telegramThemes[0] || null
+      var lightThemeSelection = normalizeThemeSelection(saved.lightThemeSelection, telegramThemes, cssThemes) ||
+        normalizeThemeSelection({ id: saved.lastLightTheme }, telegramThemes, cssThemes) || { id: 'classic', telegramId: '' }
+      var darkThemeSelection = normalizeThemeSelection(saved.darkThemeSelection, telegramThemes, cssThemes) ||
+        normalizeThemeSelection({ id: saved.lastDarkTheme }, telegramThemes, cssThemes) || { id: 'night', telegramId: '' }
       return {
-        theme: saved.theme === 'telegram' && selectedTelegram ? 'telegram' : themes.some(function (item) { return item.id === saved.theme }) ? saved.theme : 'classic',
+        theme: saved.theme === 'telegram' && selectedTelegram ? 'telegram' : cssThemes.some(function (item) { return item.id === saved.theme }) ? saved.theme : themes.some(function (item) { return item.id === saved.theme }) ? saved.theme : 'classic',
         telegramThemes: telegramThemes,
+        cssThemes: cssThemes,
         telegramThemeId: selectedTelegram ? selectedTelegram.id : '',
         telegramTheme: selectedTelegram,
         accent: typeof saved.accent === 'string' ? saved.accent : '',
@@ -153,12 +164,25 @@
         customColor: /^#[0-9a-f]{6}$/i.test(saved.customColor || '') ? saved.customColor.toUpperCase() : '#5181B8',
         squareAvatars: saved.squareAvatars === true,
         squareBadges: saved.squareBadges === true,
-        lastLightTheme: saved.lastLightTheme === 'day' || (!saved.lastLightTheme && saved.theme === 'day') ? 'day' : 'classic',
-        lastDarkTheme: saved.lastDarkTheme === 'tinted' || (!saved.lastDarkTheme && saved.theme === 'tinted') ? 'tinted' : 'night'
+        lightThemeSelection: lightThemeSelection,
+        darkThemeSelection: darkThemeSelection
       }
     } catch (_) {
-      return { theme: 'classic', telegramThemes: [], telegramThemeId: '', telegramTheme: null, accent: '', accentId: '', customColor: '#5181B8', squareAvatars: false, squareBadges: false, lastLightTheme: 'classic', lastDarkTheme: 'night' }
+      return { theme: 'classic', telegramThemes: [], cssThemes: [], telegramThemeId: '', telegramTheme: null, accent: '', accentId: '', customColor: '#5181B8', squareAvatars: false, squareBadges: false, lightThemeSelection: { id: 'classic', telegramId: '' }, darkThemeSelection: { id: 'night', telegramId: '' } }
     }
+  }
+
+  function normalizeThemeSelection(selection, telegramThemes, cssThemes) {
+    if (!selection || typeof selection !== 'object') return null
+    var id = selection.id || selection.theme
+    var telegramId = selection.telegramId || ''
+    if (id === 'telegram') return telegramThemes.some(function (item) { return item.id === telegramId }) ? { id: id, telegramId: telegramId } : null
+    if (themes.some(function (item) { return item.id === id }) || cssThemes.some(function (item) { return item.id === id })) return { id: id, telegramId: '' }
+    return null
+  }
+
+  function sameThemeSelection(left, right) {
+    return !!left && !!right && left.id === right.id && (left.id !== 'telegram' || left.telegramId === right.telegramId)
   }
 
   var prefs = readPrefs()
@@ -217,6 +241,11 @@
   }
 
   function themeForSelection(themeId, telegramId) {
+    var cssTheme = prefs.cssThemes.filter(function (item) { return item.id === themeId })[0]
+    if (cssTheme) {
+      cssTheme.dark = detectCssThemeDark(cssTheme.css)
+      return { id: 'css', dark: cssTheme.dark, bg: cssTheme.dark ? '#242424' : '#FFFFFF', fg: cssTheme.dark ? '#FFFFFF' : '#222222', border: cssTheme.dark ? '#404040' : '#E2E2E2', defaultAccent: cssThemeAccent(cssTheme, '#5181B8') }
+    }
     if (themeId === 'telegram' && telegramThemeById(telegramId)) {
       var colors = telegramThemeById(telegramId).colors
       var bg = solidColor(colors.windowBg || colors.dialogsBg || '#242424')
@@ -234,11 +263,54 @@
     return match ? rgbToHex(match.slice(1).map(Number)) : '#242424'
   }
 
+  function cssThemeValue(theme, name) {
+    if (!theme) return ''
+    var expression = new RegExp('(?:^|[;{])\\s*--' + name + '\\s*:\\s*([^;}]+)', 'g')
+    var match, value
+    while ((match = expression.exec(theme.css))) value = match[1].trim()
+    return value || ''
+  }
+
+  function cssThemeColor(theme, name, fallback) {
+    return cssThemeValue(theme, name) || fallback
+  }
+
+  function cssColorHex(value) {
+    if (/^#[0-9a-f]{6}$/i.test(value || '')) return value
+    var shortHex = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value || '')
+    if (shortHex) return '#' + shortHex[1] + shortHex[1] + shortHex[2] + shortHex[2] + shortHex[3] + shortHex[3]
+    var rgb = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(value || '')
+    return rgb ? rgbToHex([Number(rgb[1]), Number(rgb[2]), Number(rgb[3])]) : ''
+  }
+
+  function cssThemeAccent(theme, fallback) {
+    var names = ['ovk-accent', 'base-icon', 'link-fg']
+    for (var i = 0; i < names.length; i++) {
+      var color = cssColorHex(cssThemeValue(theme, names[i]))
+      if (color) return color
+    }
+    return fallback
+  }
+
+  function detectCssThemeDark(css) {
+    var theme = { css: css || '' }
+    var background = cssColorHex(cssThemeValue(theme, 'base-bg')) ||
+      cssColorHex(cssThemeValue(theme, 'layer-box-bg')) ||
+      cssColorHex(cssThemeValue(theme, 'dialogitem-bg'))
+    if (!background) return false
+    var rgb = hexToRgb(background)
+    return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000 < 140
+  }
+
   function currentAccent() {
     return accentForTheme(currentTheme())
   }
 
   function accentForTheme(theme) {
+    if (theme.id === 'css') {
+      var cssTheme = prefs.cssThemes.filter(function (item) { return item.id === prefs.theme })[0]
+      return cssThemeAccent(cssTheme, '#5181B8')
+    }
     if (theme.id === 'telegram') return theme.defaultAccent
     if (prefs.accentId === 'custom') return prefs.customColor
     var chosen = accents.filter(function (item) { return item.id === prefs.accentId })[0]
@@ -445,6 +517,13 @@
     }
     }
     lastPalette = palette
+    if (!cssThemesStyle) {
+      cssThemesStyle = document.createElement('style')
+      cssThemesStyle.id = 'openvk-css-theme'
+      document.head.appendChild(cssThemesStyle)
+    }
+    var selectedCssTheme = prefs.cssThemes.filter(function (item) { return item.id === prefs.theme })[0]
+    cssThemesStyle.textContent = selectedCssTheme ? selectedCssTheme.css : ''
     styleNode.textContent = ':root{' + Object.keys(palette).map(function (name) {
       return '--' + name + ':' + palette[name] + ';'
     }).join('') + '} .im_dialog_messages{background-color:var(--base-bg);}' +
@@ -454,7 +533,7 @@
       'body.openvk-theme-classic .update_buttons>.wide_button:not(.-disabled):active,body.openvk-theme-day .update_buttons>.wide_button:not(.-disabled):active{background-color:' + scaledColor(accent, .78) + ';}'
       + 'body.openvk-theme-classic .login_submit_button:not(.-disabled):hover,body.openvk-theme-day .login_submit_button:not(.-disabled):hover{background-color:var(--ovk-accent);}'
       + 'body.openvk-theme-classic .login_submit_button:not(.-disabled):active,body.openvk-theme-day .login_submit_button:not(.-disabled):active{background-color:' + scaledColor(accent, .78) + ';}'
-    document.body.classList.remove('openvk-theme-classic', 'openvk-theme-day', 'openvk-theme-tinted', 'openvk-theme-night', 'openvk-theme-telegram')
+    document.body.classList.remove('openvk-theme-classic', 'openvk-theme-day', 'openvk-theme-tinted', 'openvk-theme-night', 'openvk-theme-telegram', 'openvk-theme-css')
     document.body.classList.add('openvk-theme-' + theme.id)
     applyShapes()
     document.documentElement.style.setProperty('--ovk-accent', accent)
@@ -475,6 +554,18 @@
       checkboxMarkup('openvk-wallpaper-tile', wallpaperWords.tile) +
       checkboxMarkup('openvk-square-avatars-control', lang.appearance_square_avatars) +
       checkboxMarkup('openvk-square-badges-control', lang.appearance_square_badges)
+    var themeGrid = root.querySelector('.openvk-theme-grid')
+    themeGrid.addEventListener('wheel', function (event) {
+      if (event.ctrlKey) return
+      var maxScroll = themeGrid.scrollWidth - themeGrid.clientWidth
+      if (maxScroll <= 0) return
+      var delta = Math.abs(event.deltaY) > Math.abs(event.deltaX) ? event.deltaY : event.deltaX
+      if (!delta) return
+      var nextScroll = Math.max(0, Math.min(maxScroll, themeGrid.scrollLeft + delta))
+      if (nextScroll === themeGrid.scrollLeft) return
+      event.preventDefault()
+      themeGrid.scrollLeft = nextScroll
+    }, { passive: false })
     renderPanel(root)
     installThemeMenu(root)
     onCheckbox(root.querySelector('.openvk-square-avatars-control'), function () {
@@ -521,6 +612,7 @@
     var swatches = root.querySelector('.openvk-accent-list')
     if (!grid || !swatches) return
     root.classList.toggle('openvk-telegram-active', prefs.theme === 'telegram' && !!prefs.telegramTheme)
+    root.classList.toggle('openvk-css-active', prefs.cssThemes.some(function (item) { return item.id === prefs.theme }))
     grid.innerHTML = themes.map(function (theme) {
       var selected = theme.id === prefs.theme
       return '<button type="button" class="openvk-theme-option' + (selected ? ' -selected' : '') + '" data-theme="' + theme.id + '" aria-pressed="' + selected + '">' +
@@ -529,7 +621,18 @@
     }).join('') + prefs.telegramThemes.map(function (theme) {
       var selected = prefs.theme === 'telegram' && prefs.telegramThemeId === theme.id
       return '<button type="button" class="openvk-theme-option' + (selected ? ' -selected' : '') + '" data-theme="telegram" data-telegram-id="' + theme.id + '" aria-pressed="' + selected + '"><span class="openvk-theme-card"><img src="lib/themes/night.png" alt=""><span class="openvk-theme-check" aria-hidden="true">✓</span></span><span class="openvk-theme-name"></span></button>'
+    }).join('') + prefs.cssThemes.map(function (theme) {
+      var selected = theme.id === prefs.theme
+      return '<button type="button" class="openvk-theme-option' + (selected ? ' -selected' : '') + '" data-theme="' + theme.id + '" aria-pressed="' + selected + '"><span class="openvk-theme-card"><img src="lib/themes/' + (theme.dark ? 'night.png' : 'day.png') + '" alt=""><span class="openvk-theme-check" aria-hidden="true">✓</span></span><span class="openvk-theme-name"></span></button>'
     }).join('')
+    grid.querySelectorAll('[data-theme]:not([data-telegram-id])').forEach(function (button) {
+      var custom = prefs.cssThemes.filter(function (item) { return item.id === button.getAttribute('data-theme') })[0]
+      if (custom) button.querySelector('.openvk-theme-name').textContent = custom.name
+      button.addEventListener('contextmenu', function (event) {
+        if (custom) openCssThemeContextMenu(event, custom.id)
+        else openPresetThemeContextMenu(event, button.getAttribute('data-theme'))
+      })
+    })
     grid.querySelectorAll('[data-telegram-id]').forEach(function (button) {
       var imported = prefs.telegramThemes.filter(function (item) { return item.id === button.getAttribute('data-telegram-id') })[0]
       if (!imported) return
@@ -550,8 +653,10 @@
           if (!imported) return
           prefs.telegramThemeId = telegramId
           prefs.telegramTheme = imported
-        } else if (themeForSelection(themeId).dark) prefs.lastDarkTheme = themeId
-        else prefs.lastLightTheme = themeId
+        } else {
+          prefs.telegramThemeId = ''
+          prefs.telegramTheme = null
+        }
         prefs.theme = themeId
         wallpaper = wallpaperForSelection(themeId, telegramId)
         savePrefs()
@@ -560,6 +665,7 @@
     })
     root.querySelectorAll('[data-accent]').forEach(function (button) {
       button.addEventListener('click', function () {
+        if (prefs.cssThemes.some(function (item) { return item.id === prefs.theme })) return
         var id = button.getAttribute('data-accent')
         if (id === 'custom') return openColorDialog()
         var item = accents.filter(function (color) { return color.id === id })[0]
@@ -581,7 +687,9 @@
     var menu = document.createElement('div')
     menu.className = 'openvk-theme-context-menu'
     menu.setAttribute('role', 'menu')
-    menu.innerHTML = '<button type="button" role="menuitem" data-action="rename">' + telegramWords.rename + '</button>' +
+    menu.innerHTML = '<button type="button" role="menuitem" data-action="make-dark">' + words.makeDarkTheme + '</button>' +
+      '<button type="button" role="menuitem" data-action="make-light">' + words.makeLightTheme + '</button>' +
+      '<button type="button" role="menuitem" data-action="rename">' + telegramWords.rename + '</button>' +
       '<button type="button" role="menuitem" data-action="remove">' + telegramWords.remove + '</button>'
     document.body.appendChild(menu)
     menu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8)) + 'px'
@@ -595,6 +703,14 @@
     function onKey(e) { if (e.key === 'Escape') close() }
     document.addEventListener('mousedown', onOutside, true)
     document.addEventListener('keydown', onKey)
+    menu.querySelector('[data-action="make-dark"]').addEventListener('click', function () {
+      close()
+      assignThemeRole('dark', 'telegram', id)
+    })
+    menu.querySelector('[data-action="make-light"]').addEventListener('click', function () {
+      close()
+      assignThemeRole('light', 'telegram', id)
+    })
     menu.querySelector('[data-action="rename"]').addEventListener('click', function () {
       close()
       openRenameThemeDialog(id)
@@ -602,6 +718,185 @@
     menu.querySelector('[data-action="remove"]').addEventListener('click', function () {
       close()
       removeTelegramTheme(id)
+    })
+  }
+
+  function openCssThemeContextMenu(event, id) {
+    event.preventDefault()
+    var previous = document.querySelector('.openvk-theme-context-menu')
+    if (previous) previous.remove()
+    var menu = document.createElement('div')
+    menu.className = 'openvk-theme-context-menu'
+    menu.innerHTML = '<button type="button" data-action="make-dark">' + words.makeDarkTheme + '</button><button type="button" data-action="make-light">' + words.makeLightTheme + '</button>' +
+      '<button type="button" data-action="export">' + (lang.appearance_export_css || 'Export CSS') + '</button><button type="button" data-action="rename">' + telegramWords.rename + '</button><button type="button" data-action="remove">' + telegramWords.remove + '</button>'
+    document.body.appendChild(menu)
+    menu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8)) + 'px'
+    menu.style.top = Math.max(8, Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8)) + 'px'
+    function close() { menu.remove(); document.removeEventListener('mousedown', onOutside, true) }
+    function onOutside(e) { if (!menu.contains(e.target)) close() }
+    document.addEventListener('mousedown', onOutside, true)
+    menu.querySelector('[data-action="make-dark"]').addEventListener('click', function () { close(); assignThemeRole('dark', id, '') })
+    menu.querySelector('[data-action="make-light"]').addEventListener('click', function () { close(); assignThemeRole('light', id, '') })
+    menu.querySelector('[data-action="export"]').addEventListener('click', function () { close(); exportCssTheme(id) })
+    menu.querySelector('[data-action="rename"]').addEventListener('click', function () { close(); openRenameCssThemeDialog(id) })
+    menu.querySelector('[data-action="remove"]').addEventListener('click', function () { close(); removeCssTheme(id) })
+  }
+
+  function openPresetThemeContextMenu(event, id) {
+    event.preventDefault()
+    var previous = document.querySelector('.openvk-theme-context-menu')
+    if (previous) previous.remove()
+    var menu = document.createElement('div')
+    menu.className = 'openvk-theme-context-menu'
+    menu.setAttribute('role', 'menu')
+    menu.innerHTML = '<button type="button" role="menuitem" data-action="make-dark">' + words.makeDarkTheme + '</button>' +
+      '<button type="button" role="menuitem" data-action="make-light">' + words.makeLightTheme + '</button>'
+    document.body.appendChild(menu)
+    menu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8)) + 'px'
+    menu.style.top = Math.max(8, Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8)) + 'px'
+    function close() { menu.remove(); document.removeEventListener('mousedown', onOutside, true); document.removeEventListener('keydown', onKey) }
+    function onOutside(e) { if (!menu.contains(e.target)) close() }
+    function onKey(e) { if (e.key === 'Escape') close() }
+    document.addEventListener('mousedown', onOutside, true)
+    document.addEventListener('keydown', onKey)
+    menu.querySelector('[data-action="make-dark"]').addEventListener('click', function () { close(); assignThemeRole('dark', id, '') })
+    menu.querySelector('[data-action="make-light"]').addEventListener('click', function () { close(); assignThemeRole('light', id, '') })
+  }
+
+  function assignThemeRole(role, id, telegramId) {
+    var selection = {
+      id: id,
+      telegramId: id === 'telegram' ? telegramId : ''
+    }
+    var targetKey = role === 'dark' ? 'darkThemeSelection' : 'lightThemeSelection'
+    var otherKey = role === 'dark' ? 'lightThemeSelection' : 'darkThemeSelection'
+    prefs[targetKey] = selection
+    if (sameThemeSelection(selection, prefs[otherKey])) {
+      prefs[otherKey] = role === 'dark' ? { id: 'classic', telegramId: '' } : { id: 'night', telegramId: '' }
+    }
+    savePrefs()
+  }
+
+  function openRenameCssThemeDialog(id) {
+    var theme = prefs.cssThemes.filter(function (item) { return item.id === id })[0]
+    if (!theme) return
+    var overlay = document.createElement('div')
+    overlay.className = 'openvk-color-overlay openvk-rename-css-theme-overlay'
+    overlay.innerHTML = '<section class="openvk-color-dialog openvk-rename-theme-dialog" role="dialog" aria-modal="true" aria-labelledby="openvk-rename-css-theme-title">' +
+      '<h2 id="openvk-rename-css-theme-title">' + telegramWords.rename + '</h2>' +
+      '<input type="text" maxlength="60" aria-label="' + telegramWords.rename + '">' +
+      '<div class="openvk-color-actions"><button type="button" data-action="cancel">' + words.cancel + '</button><button type="button" class="-primary" data-action="save">' + words.save + '</button></div></section>'
+    document.body.appendChild(overlay)
+    var input = overlay.querySelector('input')
+    input.value = theme.name
+    input.focus()
+    input.select()
+    function close() { overlay.remove(); document.removeEventListener('keydown', onKey) }
+    function save() {
+      var name = input.value.trim()
+      if (!name) { input.focus(); return }
+      theme.name = name.slice(0, 60)
+      savePrefs()
+      document.querySelectorAll('.openvk-appearance').forEach(renderPanel)
+      close()
+    }
+    function onKey(event) {
+      if (event.key === 'Escape') close()
+      else if (event.key === 'Enter') save()
+    }
+    document.addEventListener('keydown', onKey)
+    overlay.addEventListener('click', function (event) { if (event.target === overlay) close() })
+    overlay.querySelector('[data-action="cancel"]').addEventListener('click', close)
+    overlay.querySelector('[data-action="save"]').addEventListener('click', save)
+  }
+
+  function removeCssTheme(id) {
+    var wasActive = prefs.theme === id
+    prefs.cssThemes = prefs.cssThemes.filter(function (item) { return item.id !== id })
+    if (prefs.lightThemeSelection.id === id) prefs.lightThemeSelection = { id: 'classic', telegramId: '' }
+    if (prefs.darkThemeSelection.id === id) prefs.darkThemeSelection = { id: 'night', telegramId: '' }
+    if (wasActive) prefs.theme = 'classic'
+    wallpaper = wallpaperForSelection(prefs.theme, prefs.telegramThemeId)
+    savePrefs()
+    applyTheme()
+  }
+
+  function exportCssTheme(id) {
+    var theme = prefs.cssThemes.filter(function (item) { return item.id === id })[0]
+    if (!theme) return
+    saveCssFile(collectDocumentCss(), theme.name)
+  }
+
+  function exportCurrentThemeCss() {
+    var theme = currentTheme()
+    var custom = prefs.cssThemes.filter(function (item) { return item.id === prefs.theme })[0]
+    saveCssFile(collectDocumentCss(), custom ? custom.name : theme.id)
+  }
+
+  function saveCssFile(css, name) {
+    var remote = require('electron').remote
+    remote.dialog.showSaveDialog(remote.getCurrentWindow(), { defaultPath: name.replace(/[<>:"/\\|?*]/g, '_') + '.css', filters: [{ name: 'CSS', extensions: ['css'] }] }, function (filePath) {
+      if (!filePath) return
+      require('fs').writeFile(filePath, css, 'utf8', function (error) { if (error) window.alert(error.message) })
+    })
+  }
+
+  function collectDocumentCss() {
+    var output = []
+    var visited = []
+    function collectRules(sheet) {
+      if (!sheet || visited.indexOf(sheet) !== -1) return ''
+      visited.push(sheet)
+      var rules = sheet.cssRules
+      if (!rules) return ''
+      var source = []
+      for (var i = 0; i < rules.length; i++) {
+        var rule = rules[i]
+        if (rule.type === 3 && rule.styleSheet) source.push(collectRules(rule.styleSheet))
+        else source.push(resolveCssUrls(rule.cssText, sheet.href || document.baseURI))
+      }
+      return source.filter(Boolean).join('\n')
+    }
+    Array.prototype.forEach.call(document.styleSheets, function (sheet) {
+      try {
+        var source = collectRules(sheet)
+        if (source) output.push('/* ' + (sheet.href || 'inline stylesheet') + ' */\n' + source)
+      } catch (_) {
+        // Stylesheets blocked by the browser's CSSOM access rules are skipped.
+      }
+    })
+    return output.join('\n\n')
+  }
+
+  function resolveCssUrls(css, baseUrl) {
+    return css.replace(/url\(\s*(['"]?)(.*?)\1\s*\)/gi, function (match, quote, value) {
+      var url = value.trim()
+      if (!url || /^(?:data:|blob:|https?:|file:|\/\/|\/|#)/i.test(url)) return match
+      try { return 'url("' + new window.URL(url, baseUrl).href + '")' } catch (_) { return match }
+    })
+  }
+
+  function chooseCssTheme() {
+    var remote = require('electron').remote
+    remote.dialog.showOpenDialog(remote.getCurrentWindow(), { properties: ['openFile'], filters: [{ name: 'CSS', extensions: ['css'] }] }, function (paths) {
+      if (!paths || !paths[0]) return
+      var fs = require('fs')
+      var path = require('path')
+      fs.stat(paths[0], function (statError, stats) {
+        if (statError) return window.alert(statError.message)
+        if (stats.size > 2 * 1024 * 1024) return window.alert(lang.appearance_css_invalid || 'Invalid or oversized CSS file')
+        fs.readFile(paths[0], 'utf8', function (error, css) {
+          if (error) return window.alert(error.message)
+          if (!css.trim()) return window.alert(lang.appearance_css_invalid || 'Invalid or oversized CSS file')
+          var id = 'css-' + Date.now() + '-' + Math.floor(Math.random() * 1000000)
+          var theme = { id: id, name: path.basename(paths[0], path.extname(paths[0])), css: resolveCssUrls(css, fileUrl(paths[0])), dark: detectCssThemeDark(css) }
+          prefs.cssThemes.push(theme)
+          prefs.theme = id
+          wallpaper = wallpaperForSelection(id, '')
+          savePrefs()
+          applyTheme()
+        })
+      })
     })
   }
 
@@ -648,7 +943,18 @@
       prefs.telegramTheme = prefs.telegramThemes[0] || null
       prefs.telegramThemeId = prefs.telegramTheme ? prefs.telegramTheme.id : ''
     }
-    if (wasActive && !prefs.telegramTheme) prefs.theme = wasDark ? prefs.lastDarkTheme : prefs.lastLightTheme
+    if (prefs.lightThemeSelection.id === 'telegram' && prefs.lightThemeSelection.telegramId === id) {
+      prefs.lightThemeSelection = { id: 'classic', telegramId: '' }
+    }
+    if (prefs.darkThemeSelection.id === 'telegram' && prefs.darkThemeSelection.telegramId === id) {
+      prefs.darkThemeSelection = { id: 'night', telegramId: '' }
+    }
+    if (wasActive && !prefs.telegramTheme) {
+      var fallback = wasDark ? prefs.lightThemeSelection : prefs.darkThemeSelection
+      prefs.theme = fallback.id
+      prefs.telegramThemeId = fallback.telegramId || ''
+      prefs.telegramTheme = fallback.id === 'telegram' ? telegramThemeById(fallback.telegramId) : null
+    }
     wallpaper = wallpaperForSelection(prefs.theme, prefs.telegramThemeId)
     savePrefs()
     applyTheme()
@@ -706,6 +1012,8 @@
     overlay.innerHTML = '<section class="openvk-color-dialog openvk-theme-choice-dialog" role="dialog" aria-modal="true" aria-labelledby="openvk-theme-choice-title">' +
       '<h2 id="openvk-theme-choice-title">' + telegramWords.create + '</h2>' +
       '<button type="button" class="openvk-theme-choice-import">' + telegramWords.import + '</button>' +
+      '<button type="button" class="openvk-theme-choice-import openvk-theme-choice-css">' + (lang.appearance_import_css || 'Import CSS file') + '</button>' +
+      '<button type="button" class="openvk-theme-choice-import openvk-theme-choice-export">' + (lang.appearance_export_css || 'Export CSS') + '</button>' +
       '<div class="openvk-color-actions"><button type="button" data-action="cancel">' + words.cancel + '</button></div></section>'
     document.body.appendChild(overlay)
     var trigger = document.querySelector('.openvk-theme-menu-trigger')
@@ -723,6 +1031,8 @@
       close()
       chooseTelegramTheme()
     })
+    overlay.querySelector('.openvk-theme-choice-css').addEventListener('click', function () { close(); chooseCssTheme() })
+    overlay.querySelector('.openvk-theme-choice-export').addEventListener('click', function () { close(); exportCurrentThemeCss() })
   }
 
   function chooseTelegramTheme() {
@@ -956,8 +1266,10 @@
         if (selectedTheme === 'telegram') {
           prefs.telegramThemeId = selectedTelegramId
           prefs.telegramTheme = telegramThemeById(selectedTelegramId)
-        } else if (themeForSelection(selectedTheme).dark) prefs.lastDarkTheme = selectedTheme
-        else prefs.lastLightTheme = selectedTheme
+        } else {
+          prefs.telegramThemeId = ''
+          prefs.telegramTheme = null
+        }
         wallpaper = nextWallpaper
         saveWallpaper()
         savePrefs()
@@ -1136,21 +1448,33 @@
     areAvatarsSquare: function () { return prefs.squareAvatars },
     getNotificationTheme: function () {
       var palette = lastPalette || {}
-      var background = palette['layer-box-bg'] || currentTheme().bg
+      var selectedCssTheme = prefs.cssThemes.filter(function (item) { return item.id === prefs.theme })[0]
+      var background = cssThemeColor(selectedCssTheme, 'layer-box-bg', palette['layer-box-bg'] || currentTheme().bg)
       return {
         squareAvatars: prefs.squareAvatars,
         background: background,
-        header: palette['layer-box-header-bg'] || background,
-        border: palette['header-border'] || currentTheme().border,
-        foreground: palette['base-fg'] || currentTheme().fg,
-        muted: palette['gray-fg'] || currentTheme().fg,
-        accent: currentAccent(),
-        input: palette['input-bg'] || background,
+        header: cssThemeColor(selectedCssTheme, 'layer-box-header-bg', palette['layer-box-header-bg'] || background),
+        border: cssThemeColor(selectedCssTheme, 'header-border', palette['header-border'] || currentTheme().border),
+        foreground: cssThemeColor(selectedCssTheme, 'base-fg', palette['base-fg'] || currentTheme().fg),
+        muted: cssThemeColor(selectedCssTheme, 'gray-fg', palette['gray-fg'] || currentTheme().fg),
+        accent: cssThemeAccent(selectedCssTheme, currentAccent()),
+        title: selectedCssTheme ? cssThemeColor(selectedCssTheme, 'win32-window-title-fg', '#fff') : null,
+        titleWeight: selectedCssTheme ? '700' : null,
+        titleFont: selectedCssTheme ? cssThemeColor(selectedCssTheme, 'win32-window-title-font-family', null) : null,
+        close: selectedCssTheme ? cssThemeColor(selectedCssTheme, 'win32-window-title-btn-fg', '#fff') : null,
+        input: cssThemeColor(selectedCssTheme, 'nt-input-bg', cssThemeColor(selectedCssTheme, 'input-bg', palette['input-bg'] || background)),
         reply: rgba(solidColor(background), .92)
       }
     },
     toggleDarkTheme: function () {
-      prefs.theme = currentTheme().dark ? prefs.lastLightTheme : prefs.lastDarkTheme
+      var current = { id: prefs.theme, telegramId: prefs.theme === 'telegram' ? prefs.telegramThemeId : '' }
+      var matchesDark = sameThemeSelection(current, prefs.darkThemeSelection)
+      var matchesLight = sameThemeSelection(current, prefs.lightThemeSelection)
+      var isDark = matchesDark && !matchesLight ? true : matchesLight && !matchesDark ? false : currentTheme().dark
+      var target = isDark ? prefs.lightThemeSelection : prefs.darkThemeSelection
+      prefs.theme = target.id
+      prefs.telegramThemeId = target.telegramId || ''
+      prefs.telegramTheme = target.id === 'telegram' ? telegramThemeById(target.telegramId) : null
       wallpaper = wallpaperForSelection(prefs.theme, prefs.telegramThemeId)
       savePrefs()
       applyTheme()

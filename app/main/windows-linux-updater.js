@@ -107,8 +107,8 @@ class Updater extends EventEmitter {
     })
     .then(() => {
       if (process.platform == 'linux') {
-        const executable = findExecutable(this.unpackDir, 'vk')
-        if (!executable) throw new Error('Linux update archive does not contain vk')
+        const executable = findExecutable(this.unpackDir, 'ovk') || findExecutable(this.unpackDir, 'vk')
+        if (!executable) throw new Error('Linux update archive does not contain ovk or vk')
         this.unpackDir = path.dirname(executable)
       }
       return punlink(this.downloadPath, true)
