@@ -10435,7 +10435,7 @@ module.exports = function(e) {
             var t = v.default.name(this.firstName, 1 == this.sex ? 1 : 0, e);
             return this.lastName && (t += " " + v.default.surname(this.lastName, 1 == this.sex ? 1 : 0, e)), t
           }
-          return this.firstName + " " + this.lastName
+          return this.firstName + (this.lastName ? " " + this.lastName : "")
         }
       }, {
         key: "getFirstName",
@@ -10445,7 +10445,7 @@ module.exports = function(e) {
       }, {
         key: "getShortName",
         value: function() {
-          return this.isEmail() ? this.firstName : this.firstName + " " + this.lastName.substring(0, 1) + "."
+          return this.isEmail() || !this.lastName ? this.firstName : this.firstName + " " + this.lastName.substring(0, 1) + "."
         }
       }, {
         key: "getPhoto50",
