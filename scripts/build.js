@@ -112,8 +112,8 @@ function checkNative() {
 
   if (target === 'linux-x64') {
     const runtime = path.join(root, 'runtime', target)
-    need(path.join(runtime, 'vk'))
-    needNative(path.join(runtime, 'vk.bin'))
+    need(path.join(runtime, 'ovk'))
+    needNative(path.join(runtime, 'ovk.bin'))
     for (const name of ['libgconf-2.so.4', 'libdbus-glib-1.so.2']) {
       needNative(path.join(runtime, 'lib', name))
     }
@@ -179,7 +179,7 @@ async function main() {
   if (stageOnly) return
 
   const localRuntime = path.join(root, 'runtime', target)
-  const localExecutable = platform === 'win32' ? 'vk.exe' : 'vk'
+  const localExecutable = platform === 'win32' ? 'vk.exe' : platform === 'linux' ? 'ovk' : 'vk'
   if (fs.existsSync(path.join(localRuntime, localExecutable))) {
     const output = path.join(releaseRoot, outputName)
     fs.mkdirSync(releaseRoot, { recursive: true })
@@ -197,9 +197,14 @@ async function main() {
       fs.renameSync(windowsExecutable, path.join(output, 'ovk.exe'))
     }
     copyTree(stage, path.join(output, 'resources', 'app'))
+    if (platform === 'linux') {
+      fs.chmodSync(path.join(output, 'ovk'), 0o755)
+      fs.chmodSync(path.join(output, 'ovk.bin'), 0o755)
+    }
     for (const file of extras) {
-      if (!fs.existsSync(path.join(output, file))) {
-        fs.copyFileSync(path.join(assets, file), path.join(output, file))
+      const outputFile = path.join(output, file)
+      if (platform === 'linux' || !fs.existsSync(outputFile)) {
+        fs.copyFileSync(path.join(assets, file), outputFile)
       }
     }
     console.log('Сборка готова: ' + output)
@@ -220,7 +225,7 @@ async function main() {
     overwrite: true,
     prune: false,
     asar: false,
-    executableName: platform === 'win32' ? 'ovk' : 'OpenVK',
+    executableName: platform === 'win32' || platform === 'linux' ? 'ovk' : 'OpenVK',
     icon: platform === 'win32' ? path.join(assets, 'tray.ico') : undefined,
     extraResource: platform === 'darwin' ? extras.map(file => path.join(assets, file)) : [],
     appVersion: require(path.join(stage, 'package.json')).version

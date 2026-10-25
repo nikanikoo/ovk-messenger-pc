@@ -73,23 +73,35 @@ def extract_package(url, expected_hash, binary_name, soname, package_name):
 
 
 def main():
-    executable = RUNTIME / "vk"
-    original = RUNTIME / "vk.bin"
+    executable = RUNTIME / "ovk"
+    legacy_executable = RUNTIME / "vk"
+    original = RUNTIME / "ovk.bin"
+    legacy_original = RUNTIME / "vk.bin"
+    if legacy_original.exists():
+        if original.exists():
+            original.unlink()
+        legacy_original.rename(original)
+    if legacy_executable.exists() and legacy_executable.read_bytes()[:4] == b"\x7fELF":
+        if original.exists():
+            original.unlink()
+        legacy_executable.rename(original)
+    elif legacy_executable.exists():
+        legacy_executable.unlink()
     if not original.exists():
-        if not executable.exists() or executable.read_bytes()[:4] != b"\x7fELF":
-            raise ValueError("Import the Linux VK Messenger 3.9.0 runtime first")
-        executable.rename(original)
+        raise ValueError("Import the Linux VK Messenger 3.9.0 runtime first")
     for package in PACKAGES:
         extract_package(*package)
     executable.write_text(
         '#!/bin/sh\n'
         'APP_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n'
         'export LD_LIBRARY_PATH="$APP_DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\n'
-        'exec "$APP_DIR/vk.bin" "$@"\n',
+        'exec "$APP_DIR/ovk.bin" "$@"\n',
         encoding="utf-8",
         newline="\n",
     )
-    print("Created portable Linux launcher: runtime/linux-x64/vk")
+    executable.chmod(0o755)
+    original.chmod(0o755)
+    print("Created portable Linux launcher: runtime/linux-x64/ovk")
 
 
 if __name__ == "__main__":
