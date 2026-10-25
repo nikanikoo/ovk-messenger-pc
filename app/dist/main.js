@@ -15609,7 +15609,7 @@ module.exports = function(e) {
           var e = this;
           if (!this.win) {
             var t = s();
-            this.win = new W(t), (0, _.isLinux)() && this.win.setMenu(null), (0, _.isMac)() && (this.win.setAlwaysOnTop(!0, "screen-saver"), this.win.setBackgroundColor((0, O.getFullscreenBackgroundColor)())), this.win.on("close", function(t) {
+            this.win = new W(t), (0, _.isLinux)() && this.win.setMenu(null), (0, _.isMac)() && (this.win.setAlwaysOnTop(!0, "floating"), this.win.setBackgroundColor((0, O.getFullscreenBackgroundColor)())), this.win.on("close", function(t) {
               e.win && !e.win.forceClose && (t.preventDefault(), e.bridge.dispatch({
                 name: "close_window"
               }), e.loadRequest && e.loadRequest.abort())
@@ -15619,7 +15619,7 @@ module.exports = function(e) {
             var o = w.default.getDocumentsRoot() + (n.i({
               NODE_ENV: "production"
             }).HOT ? "/hot-dev-window.html" : "/window.html");
-            o += "?viewer", this.win.loadURL(o), this.win.webContents.on("did-finish-load", this._didFinishLoad), (0, _.isMac)() && this.win.setAlwaysOnTop(!0, "screen-saver"), this.bridge.setWindow(this.win)
+            o += "?viewer", this.win.loadURL(o), this.win.webContents.on("did-finish-load", this._didFinishLoad), (0, _.isMac)() && this.win.setAlwaysOnTop(!0, "floating"), this.bridge.setWindow(this.win)
           }
         }
       }, {
@@ -23914,10 +23914,10 @@ module.exports = function(e) {
             }
             if (t.showWindow) {
               var d = function() {
-                  remoteLog("VC resetWindowBounds"), r ? (0, g.isLinux)() || (0, g.isMac)() || curWindow.setBounds((0, C.getFullScreenBounds)()) : f.resetFloatedWindowBounds()
+                  remoteLog("VC resetWindowBounds"), r ? (0, g.isLinux)() || curWindow.setBounds((0, C.getFullScreenBounds)()) : f.resetFloatedWindowBounds()
                 },
                 f = e;
-              remoteLog("VC 1"), o != r && (r ? e.makeWindowMaximized() : e.makeWindowFloated()), curWindow.show(), remoteLog("VC 2"), cancelAnimationFrame(e.moveRAF), e.moveRAF = requestAnimationFrame(d), e.windowShowDone = !0, e.onceShown = !0
+              remoteLog("VC 1"), o != r && (r ? e.makeWindowMaximized() : e.makeWindowFloated()), (0, g.isMac)() && d(), curWindow.show(), (0, g.isMac)() && curWindow.focus(), remoteLog("VC 2"), cancelAnimationFrame(e.moveRAF), e.moveRAF = requestAnimationFrame(d), e.windowShowDone = !0, e.onceShown = !0
             }
           }), this.addWindowListeners(), (0, g.addClass)(document.body, "v_half_max"), (0, g.addClass)(document.body, "v_max"), (0, m.dispatch)("mode", {
             maximized: !0
@@ -23994,7 +23994,7 @@ module.exports = function(e) {
         key: "makeWindowMaximized",
         value: function(e) {
           s("VC makeWindowMaximized");
-          var t = (0, g.isLinux)() || (0, g.isMac)();
+          var t = (0, g.isLinux)();
           if (void 0 === e || 1 === e) {
             t || curWindow.setAlwaysOnTop(!0), curWindow.setMovable(!1), curWindow.setResizable(!1), curWindow.setBackgroundColor((0, C.getFullscreenBackgroundColor)()), (0, g.addClass)(document.body, "v_half_max")
           }
@@ -24027,7 +24027,7 @@ module.exports = function(e) {
       }, {
         key: "closeWindow",
         value: function() {
-          c.default.isMaximized() || this.saveFloatedWindowBounds(), ((0, g.isLinux)() || (0, g.isMac)()) && curWindow.isFullScreen() || (0, C.moveWindowOutOfAllDisplays)(), this.closeWindowCrossPlatform(), (0, m.dispatch)("hide"), this.windowShowDone = !1
+          c.default.isMaximized() || this.saveFloatedWindowBounds(), (0, g.isMac)() || (0, g.isLinux)() && curWindow.isFullScreen() || (0, C.moveWindowOutOfAllDisplays)(), this.closeWindowCrossPlatform(), (0, m.dispatch)("hide"), this.windowShowDone = !1
         }
       }, {
         key: "closeWindowCrossPlatform",
@@ -39743,6 +39743,7 @@ module.exports = function(e) {
   function i() {
     var e = a(),
       t = e.size;
+    if ((0, y.isMac)()) return Object.assign({}, e.workArea);
     return {
       x: e.bounds.x,
       y: e.bounds.y - 10,
