@@ -15727,11 +15727,23 @@ module.exports = function(e) {
                 return t === e.photo || t.id == e.photo.id && t.owner_id == e.photo.owner_id
               })
             };
+            var d = function(t) {
+              var n = [],
+                o = Object.create(null);
+              for (var r = 0; r < t.length; r++) {
+                var i = t[r],
+                  a = null != i.id && null != i.owner_id ? i.owner_id + "_" + i.id : null;
+                (null === a || !o[a]) && (null !== a && (o[a] = !0), n.push(i))
+              }
+              return n
+            };
             if (r && r.photos && r.photos.length) {
-              Object.assign(n, t._getPhotosAndUsers(r.photos)), o = a(r.photos), i = -1 != o
+              var f = d(r.photos);
+              Object.assign(n, t._getPhotosAndUsers(f)), o = a(f), i = -1 != o
             }
             if ((!i || -1 == o) && e.photos && e.photos.length) {
-              o = a(e.photos), -1 != o && (Object.assign(n, t._getPhotosAndUsers(e.photos)), i = !0)
+              var p = d(e.photos);
+              o = a(p), -1 != o && (Object.assign(n, t._getPhotosAndUsers(p)), i = !0)
             }
             if (!i || -1 == o) {
               var s = e.photo.toObject();
