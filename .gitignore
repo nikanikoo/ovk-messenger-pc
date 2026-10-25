@@ -5,6 +5,7 @@ release/
 .stage/
 __pycache__/
 *.py[cod]
+.DS_Store
 
 # These bundled native dependencies are required to build the shipped targets.
 !app/node_modules/
