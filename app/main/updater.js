@@ -3,11 +3,13 @@
 const FORCE_TEST = false || process.env.UPDATE_FORCE_TEST !== undefined
 const TEST_FROM_LOCALHOST = false
 const useVKUpdater = process.platform == 'win32' || process.platform == 'linux'
+const useMacUpdater = process.platform == 'darwin'
 
 let autoUpdater = null
 let vkUpdater = null
 let bridge = null
 let downloadInProgress = false
+let availableUpdate = null
 
 if (useVKUpdater) {
   vkUpdater = require('./windows-linux-updater')
@@ -17,6 +19,8 @@ if (useVKUpdater) {
   } else {
     autoUpdater = vkUpdater.updater
   }
+} else if (useMacUpdater) {
+  autoUpdater = require('./mac-updater').updater
 } else {
   autoUpdater = require('electron').autoUpdater
 }
@@ -40,7 +44,7 @@ function getPlatform() {
     return package_json.config.platform
   }
   if (process.platform == 'darwin') {
-    return 'mac'
+    return 'darwin-' + process.arch
   }
   if (process.platform == 'win32') {
     return process.arch == 'x64' ? 'win64' : 'win32'
@@ -74,8 +78,13 @@ function getCheckURL() {
 function requestJSON(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     const parsed = URL.parse(url)
+    if (useMacUpdater && parsed.protocol !== 'https:') {
+      return reject(new Error('macOS update manifests require HTTPS'))
+    }
     const transport = parsed.protocol == 'http:' ? http : https
-    const request = transport.get(url, { headers: { 'User-Agent': 'OpenVK-Updater' } }, response => {
+    const request = transport.get(Object.assign({}, parsed, {
+      headers: { 'User-Agent': 'OpenVK-Updater' }
+    }), response => {
       if ([301, 302, 303, 307, 308].includes(response.statusCode)) {
         response.resume()
         if (!response.headers.location || redirects >= 5) {
@@ -92,7 +101,12 @@ function requestJSON(url, redirects = 0) {
 
       let body = ''
       response.setEncoding('utf8')
-      response.on('data', chunk => { body += chunk })
+      response.on('data', chunk => {
+        body += chunk
+        if (body.length > 1024 * 1024) request.destroy(new Error('Update manifest is too large'))
+      })
+      response.on('error', reject)
+      response.on('aborted', () => reject(new Error('Update manifest download was interrupted')))
       response.on('end', () => {
         try {
           resolve(JSON.parse(body))
@@ -102,15 +116,22 @@ function requestJSON(url, redirects = 0) {
       })
     })
     request.on('error', reject)
+    request.setTimeout(30000, () => request.destroy(new Error('Update check timed out')))
   })
 }
 
-function getUpdateAsset(manifest) {
-  const platform = getPlatform()
+function getPlatformAsset(manifest) {
   const assets = manifest.downloads || manifest.assets || {}
-  const platformAsset = assets[platform] || assets[process.platform]
+  const target = process.platform + '-' + process.arch
+  return (useMacUpdater && assets[target]) || assets[getPlatform()] || assets[target] ||
+    assets[process.platform] || (useMacUpdater && assets.mac)
+}
+
+function getUpdateAsset(manifest) {
+  const platformAsset = getPlatformAsset(manifest)
   if (typeof platformAsset == 'string') return platformAsset
   if (platformAsset && platformAsset.url) return platformAsset.url
+  if (useMacUpdater) return null
   if (manifest.url) return manifest.url
 
   const version = manifest.version || manifest.tag_name
@@ -132,14 +153,13 @@ function getUpdateAsset(manifest) {
  * @return {Promise} resolves null or update object
  */
 function checkForUpdates() {
-  // GitHub ZIP installation is implemented by this project only on Windows and Linux.
-  if (!useVKUpdater) {
+  if (!useVKUpdater && !useMacUpdater) {
     return Promise.resolve(false)
   }
 
   const directRequest = () => requestJSON(getCheckURL())
   let manifestPromise
-  if (bridge) {
+  if (bridge && !useMacUpdater) {
     const workerRequest = bridge.call({ name: 'check', url: getCheckURL() })
       .then(result => {
         if (result && result.status == 'update-available') return result.data
@@ -177,8 +197,11 @@ function checkForUpdates() {
 
     const url = getUpdateAsset(manifest)
     if (!url) {
+      if (useMacUpdater) return false
       throw new Error('Update manifest has no download URL for ' + getPlatform())
     }
+
+    const asset = getPlatformAsset(manifest) || {}
 
     return Object.assign({}, manifest, {
       build,
@@ -186,7 +209,8 @@ function checkForUpdates() {
       name: manifest.name || ('Version ' + (manifest.version || manifest.tag_name) + ' (' + build + ')'),
       notes: manifest.notes || manifest.body || '',
       pub_date: manifest.pub_date || manifest.published_at || new Date().toISOString(),
-      size: Number(manifest.size) || 0,
+      size: Number(asset.size || manifest.size) || 0,
+      sha256: asset.sha256 || manifest.sha256,
       url
     })
   })
@@ -249,6 +273,12 @@ module.exports = {
         downloadInProgress = false
         win.send('update', { status: 'download-error', message: error && error.message })
       } else {
+        if (useMacUpdater) {
+          const currentWindow = win.getWindow()
+          if (currentWindow) currentWindow.forceClose = false
+          require('electron').dialog.showErrorBox('OpenVK Messenger', error.message || String(error))
+          return
+        }
         win.send('update', { status: 'not-available' })
       }
     })
@@ -258,11 +288,11 @@ module.exports = {
     autoUpdater.setExecutableName('ovk.exe')
       }
 
-      autoUpdater.removeAllListeners('download-progress')
-      autoUpdater.on('download-progress', function(progress) {
-        win.send('update', { downloadProgress: progress })
-      })
     }
+    autoUpdater.removeAllListeners('download-progress')
+    autoUpdater.on('download-progress', function(progress) {
+      win.send('update', { downloadProgress: progress })
+    })
   },
 
   /**
@@ -275,10 +305,11 @@ module.exports = {
 
     win.send('update', { status: 'checking' })
 
-    checkForUpdates()
+    return checkForUpdates()
     .then(function(update) {
       log('update:', update)
       if (update) {
+        availableUpdate = update
         win.send('update', { status: 'available', update, byUser })
       } else {
         win.send('update', { status: 'not-available', byUser })
@@ -286,6 +317,10 @@ module.exports = {
     })
     .catch(function(error) {
       loge('update check failed:', error)
+      if (useMacUpdater && byUser) {
+        win.send('update', { status: 'check-error', byUser, message: error.message })
+        return
+      }
       win.send('update', { status: 'not-available', byUser })
     })
   },
@@ -293,6 +328,7 @@ module.exports = {
   download() {
     log('downloading update')
     downloadInProgress = true
+    if (useMacUpdater) autoUpdater.setUpdate(availableUpdate)
     autoUpdater.checkForUpdates()
   },
 

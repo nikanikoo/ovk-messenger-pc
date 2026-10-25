@@ -1,0 +1,28 @@
+/* The recovered interface uses winStyles on every platform. */
+body.openvk-mac-titlebar #react-root {
+  position: absolute;
+  top: 28px;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+}
+.openvk-mac-titlebar-drag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: var(--base-bg, #fff);
+  -webkit-app-region: drag;
+}
+body.openvk-mac-fullscreen #react-root { top: 0; }
+body.openvk-mac-fullscreen .openvk-mac-titlebar-drag { display: none; }
+body.-mac ::-webkit-scrollbar { width: 8px; height: 8px; }
+body.-mac ::-webkit-scrollbar-track { background: var(--base-bg, #fff); }
+body.-mac ::-webkit-scrollbar-thumb {
+  background: var(--gray-fg, #888);
+  border: 2px solid var(--base-bg, #fff);
+  border-radius: 5px;
+}
+body.-mac .nano > .nano-pane { background: var(--header-border, #ddd); }
+body.-mac .nano > .nano-pane > .nano-slider { background: var(--gray-fg, #888); }

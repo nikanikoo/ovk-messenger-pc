@@ -122,6 +122,7 @@ function checkNative() {
     }
   }
   if (target === 'darwin-x64') {
+    need(path.join(root, 'assets', 'OpenVK.icns'))
     for (const name of ['windows-notification-state', 'windows-quiet-hours']) {
       need(path.join(root, 'native', target, 'node_modules', name, 'index.js'))
     }
@@ -173,7 +174,7 @@ async function main() {
     ? ['icon48.png', 'icon256.png', 'tray.ico']
     : platform === 'linux'
       ? ['icon24.png', 'icon256.png']
-      : ['trayTemplate.png']
+      : ['trayTemplate.png', 'icon256.png']
   for (const file of extras) need(path.join(assets, file))
   console.log('Подготовлено: ' + path.relative(root, stage))
   if (stageOnly) return
@@ -191,6 +192,12 @@ async function main() {
       }
     }
     copyTree(localRuntime, output)
+    if (platform === 'linux') {
+      for (const executable of ['vk', 'vk.bin']) {
+        const file = path.join(output, executable)
+        fs.chmodSync(file, fs.statSync(file).mode | 0o111)
+      }
+    }
     if (platform === 'win32') {
       const windowsExecutable = path.join(output, localExecutable)
       await setWindowsExecutableIcon(windowsExecutable, path.join(assets, 'tray.ico'))
@@ -217,7 +224,8 @@ async function main() {
   }
   const outputs = await packager({
     dir: stage,
-    name: 'OpenVK',
+    name: platform === 'darwin' ? 'OpenVK Messenger' : 'OpenVK',
+    appBundleId: platform === 'darwin' ? 'com.nikanikoo.openvk' : undefined,
     platform,
     arch,
     electronVersion,
@@ -225,12 +233,27 @@ async function main() {
     overwrite: true,
     prune: false,
     asar: false,
-    executableName: platform === 'win32' || platform === 'linux' ? 'ovk' : 'OpenVK',
-    icon: platform === 'win32' ? path.join(assets, 'tray.ico') : undefined,
+    executableName: platform === 'win32' || platform === 'linux' ? 'ovk'
+      : platform === 'darwin' ? 'OpenVK Messenger' : 'OpenVK',
+    icon: platform === 'win32' ? path.join(assets, 'tray.ico')
+      : platform === 'darwin' ? path.join(assets, 'OpenVK.icns') : undefined,
+    extendInfo: platform === 'darwin' ? {
+      CFBundleIconFile: 'OpenVK.icns',
+      NSUserNotificationAlertStyle: 'banner'
+    } : undefined,
     extraResource: platform === 'darwin' ? extras.map(file => path.join(assets, file)) : [],
     appVersion: require(path.join(stage, 'package.json')).version
   })
-  if (platform !== 'darwin') {
+  if (platform === 'darwin') {
+    const output = path.join(releaseRoot, outputName)
+    for (let i = 0; i < outputs.length; i++) {
+      if (path.resolve(outputs[i]) !== output) {
+        fs.rmSync(output, { recursive: true, force: true })
+        fs.renameSync(outputs[i], output)
+        outputs[i] = output
+      }
+    }
+  } else {
     for (const output of outputs) {
       for (const file of extras) {
         fs.copyFileSync(path.join(assets, file), path.join(output, file))
@@ -242,5 +265,8 @@ async function main() {
 
 main().catch(error => {
   console.error(error.message)
+  if (error.cause) {
+    console.error('Причина: ' + (error.cause.code ? error.cause.code + ': ' : '') + error.cause.message)
+  }
   process.exitCode = 1
 })

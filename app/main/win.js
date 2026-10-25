@@ -210,7 +210,7 @@ function getWindowURL(opts) {
     url += '&debug=1'
   }
 
-  if (process.platform == 'darwin' && !opts.macFrame) {
+  if (process.platform == 'darwin' && opts.macFrame === false) {
     url += '&mac_frameless=1'
   }
   if (process.platform == 'linux' && isUnity()) {
@@ -380,6 +380,11 @@ module.exports = {
    * @param {Number} count
    */
   setOverlayBadge(badgeDataURL, count) {
+    if (process.platform === 'darwin') {
+      app.dock.setBadge(count > 0 ? String(count) : '')
+      return
+    }
+    if (process.platform !== 'win32' || !mainWindow) return
     count += ''
     let img = badgeDataURL !== null
       ? nativeImage.createFromDataURL(badgeDataURL)

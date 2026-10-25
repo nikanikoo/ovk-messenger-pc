@@ -7930,6 +7930,11 @@ module.exports = function(e) {
       }, {
         key: "setUnreadBadge",
         value: function(e) {
+          if ("darwin" === process.platform) {
+            try { requireMain().setBadge(e > 0 ? String(e) : "") } catch (error) { loge(error) }
+            try { requireMain("tray").setUnreadCount(e, e > 0 ? (0, m.getTrayIcon)(e) : null) } catch (error) { loge(error) }
+            return
+          }
           try {
             requireMain("win").setOverlayBadge(e > 0 ? (0, m.createIconOverlayBadge)(e) : null, e), requireMain("tray").setIcon(e > 0 ? (0, m.getTrayIcon)(e) : null)
           } catch (e) {
@@ -12423,7 +12428,7 @@ module.exports = function(e) {
     h = n(733),
     m = o(h),
     g = n(1),
-    _ = isWinDesign() || (0, g.isLinux)(),
+    _ = isWinDesign() || (0, g.isLinux)() || (0, g.isMac)(),
     v = (u = s = function(e) {
       function t() {
         var e, n, o, a;
@@ -15498,8 +15503,8 @@ module.exports = function(e) {
         r(this, t);
         for (var s = arguments.length, u = Array(s), l = 0; l < s; l++) u[l] = arguments[l];
         return n = o = i(this, (e = t.__proto__ || Object.getPrototypeOf(t)).call.apply(e, [this].concat(u))), o._didFinishLoad = function() {
-          o.peerId = null, o.groupId = null, o.win.setSkipTaskbar(!0), window.mainWindow.isVisible() && !window.mainWindow.isMinimized() && window.mainWindow.focus(), setTimeout(function() {
-            window.mainWindow.isVisible() && !window.mainWindow.isMinimized() && window.mainWindow.focus()
+          o.peerId = null, o.groupId = null, o.win.setSkipTaskbar(!0), !o.needToOpen && window.mainWindow.isVisible() && !window.mainWindow.isMinimized() && window.mainWindow.focus(), setTimeout(function() {
+            !o.needToOpen && window.mainWindow.isVisible() && !window.mainWindow.isMinimized() && window.mainWindow.focus()
           }), (0, _.isWindows)() && L.isAeroGlassEnabled && L.isAeroGlassEnabled() && !o.needToOpen && o.win.minimize(), !(0, O.transparencyOnWindowsSupported)() && !(0, _.isWindows8)() || o.needToOpen || o.win.setPosition(-1e3, -1e3), o.openCallback && (o.openCallback(), o.openCallback = null), o.windowLoaded = !0
         }, o.cancelLoadRequest = function() {
           o.loadRequest && (o.loadRequest.abort(), delete o.loadRequest)
@@ -15511,6 +15516,14 @@ module.exports = function(e) {
           var e = this;
           this.bridge = new d.default("viewer"), this.bridge.listen(function(t, o) {
             switch (t.name) {
+              case "viewer_ready":
+                e.windowLoaded = !0;
+                if (e.openCallback) {
+                  var readyCallback = e.openCallback;
+                  e.openCallback = null;
+                  readyCallback()
+                }
+                break;
               case "maximized":
                 e.maximized = t.maximized;
                 break;
@@ -21423,6 +21436,18 @@ module.exports = function(e) {
               if ((0, l.isWindows7)() || v.default.getBool("use_nt7")) return;
               "hide_content" == f && (n = lang.login_title, null, o = lang.new_message, a = null)
             }
+            if ((0, l.isMac)()) {
+              requireMain().macShowNotification({
+                title: n,
+                subtitle: e.subtitle,
+                text: o,
+                data: s,
+                hasReplyButton: !u,
+                silent: !0
+              });
+              r || t.playSound();
+              return
+            }
             var p = a instanceof c.Initials,
               m = void 0;
             m = p ? i() : null !== a ? (0, l.loadImage)(a) : Promise.resolve(null), m.then(function(e) {
@@ -21549,6 +21574,7 @@ module.exports = function(e) {
       }, {
         key: "hideIfVisible",
         value: function() {
+          (0, l.isMac)() && requireMain().macHideNotification();
           if (this.last) try {
             this.last.close(), this.last = null
           } catch (e) {
@@ -23819,7 +23845,7 @@ module.exports = function(e) {
         }, o.onMinimize = function() {
           ((0, C.transparencyOnWindowsSupported)() || (0, g.isWindows8)()) && c.default.isMaximized() && (0, C.moveWindowOutOfAllDisplays)()
         }, o.onBlur = function() {
-          c.default.isMaximized() || !curWindow.isVisible() || curWindow.isMinimized() || c.default.maximizeStarted || c.default.normalizeStarted || o.saveFloatedWindowBounds(), c.default.isMaximized() && o.windowShowDone && o.onceShown && !c.default.maximizeStarted && !c.default.normalizeStarted && !o.saveDialogIsActive && o.callCloseWindow()
+          c.default.isMaximized() || !curWindow.isVisible() || curWindow.isMinimized() || c.default.maximizeStarted || c.default.normalizeStarted || o.saveFloatedWindowBounds(), !(0, g.isMac)() && c.default.isMaximized() && o.windowShowDone && o.onceShown && !c.default.maximizeStarted && !c.default.normalizeStarted && !o.saveDialogIsActive && o.callCloseWindow()
         }, o.onMove = function() {
           (0, m.dispatch)("window_moved")
         }, o.onEnterHTMLFullScreen = function() {
@@ -23895,7 +23921,7 @@ module.exports = function(e) {
             }
           }), this.addWindowListeners(), (0, g.addClass)(document.body, "v_half_max"), (0, g.addClass)(document.body, "v_max"), (0, m.dispatch)("mode", {
             maximized: !0
-          }), curWindow.setSkipTaskbar(!0)
+          }), curWindow.setSkipTaskbar(!0), E.dispatch({ name: "viewer_ready" })
         }
       }, {
         key: "addWindowListeners",
@@ -35885,10 +35911,16 @@ module.exports = function(e) {
               }), w.default.getBool("auto_updates") && f.default.showUpdate();
               break;
             case "download-error":
+              "darwin" === process.platform && e.message && alert(e.message);
               (0, D.dispatch)("app_update", {
                 status: "available",
                 update: h.default.getUpdate()
               });
+              break;
+            case "check-error":
+              e.byUser && alert(e.message || lang.global_error);
+              o.timeout = setTimeout(requireMain("updater").check, k);
+              (0, D.dispatch)("app_update", { status: "not-available" });
               break;
             case "changelog_clicked":
               o.showChangelog()
@@ -97265,12 +97297,12 @@ module.exports = function(e) {
               enabled: this.props.alwaysOnTop,
               label: lang.settings_always_on_top,
               onToggle: this.onToggleAlwaysOnTop
-            })), t.push(d.default.createElement(k.default, {
+            })), "darwin" !== process.platform && t.push(d.default.createElement(k.default, {
               key: "native_frame",
               enabled: this.props.windowsNativeFrame,
               label: lang.settings_general_windows_native_frame,
               onToggle: this.onToggleWindowsNativeFrame
-            }), d.default.createElement(E.default, {
+            })), t.push(d.default.createElement(E.default, {
               key: "font",
               ref: "font",
               label: lang.settings_font_size,

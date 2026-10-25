@@ -13,11 +13,14 @@ class AppTray {
     }
     this.updateMenuTimeout = null
     this.tray = null
+    this.unreadCount = 0
+    this.unreadIcon = null
   }
 
   create() {
-    this.tray = new Tray(this.getDefaultIconPath())
+    this.tray = new Tray(this.getImage())
     this.tray.setToolTip('OpenVK Messenger')
+    if (process.platform === 'darwin') this.updateUnreadIcon()
     this.tray.setContextMenu(this.getMenu())
     this.tray.on('click', function() {
       let mainWindow = win.getWindow()
@@ -70,6 +73,17 @@ class AppTray {
       return
     }
     this.tray.setImage(this.getImage(dataURL))
+  }
+
+  setUnreadCount(count, dataURL = null) {
+    this.unreadCount = Math.max(0, Math.floor(Number(count) || 0))
+    this.unreadIcon = this.unreadCount > 0 ? dataURL : null
+    if (this.tray && process.platform === 'darwin') this.updateUnreadIcon()
+  }
+
+  updateUnreadIcon() {
+    this.tray.setTitle('')
+    this.tray.setImage(this.getImage(this.unreadIcon))
   }
 
   showBalloon() {
@@ -195,11 +209,14 @@ class AppTray {
   }
 
   getImage(dataURL = null) {
-    if (!dataURL) {
-      return nativeImage.createFromPath(this.getDefaultIconPath())
-    } else {
-      return nativeImage.createFromDataURL(dataURL)
+    let image = dataURL
+      ? nativeImage.createFromDataURL(dataURL)
+      : nativeImage.createFromPath(this.getDefaultIconPath())
+    if (process.platform === 'darwin') {
+      image = image.resize({ width: 18, height: 18, quality: 'best' })
+      image.setTemplateImage(false)
     }
+    return image
   }
 }
 

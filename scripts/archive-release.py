@@ -1,6 +1,7 @@
 """Create portable release archives from the unpacked build folders."""
 
 import argparse
+import subprocess
 import tarfile
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -10,9 +11,20 @@ RELEASE = ROOT / "release"
 
 
 def archive(target, build_name=None, archive_name=None):
-    source = RELEASE / (build_name or f"OpenVK-{target}")
+    default_build = "OpenVK-darwin-x64" if target == "darwin-x64" else f"OpenVK-{target}"
+    source = RELEASE / (build_name or default_build)
     if not source.is_dir():
         raise SystemExit(f"Build first: {source}")
+    if target == "darwin-x64":
+        bundle = source / "OpenVK Messenger.app"
+        if not bundle.is_dir():
+            raise SystemExit(f"Application not found: {bundle}")
+        output = RELEASE / (archive_name or "OpenVK-darwin-x64.zip")
+        subprocess.run([
+            "/usr/bin/ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", str(bundle), str(output)
+        ], check=True)
+        print(f"{output.name}: {output.stat().st_size} bytes")
+        return
     files = sorted(path for path in source.rglob("*") if path.is_file())
     archive_root = source.name
     if archive_name:
@@ -39,7 +51,7 @@ def archive(target, build_name=None, archive_name=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("target", choices=["win32-x64", "win32-ia32", "linux-x64"])
+    parser.add_argument("target", choices=["win32-x64", "win32-ia32", "linux-x64", "darwin-x64"])
     parser.add_argument("--build-name", help="Name of the built directory in release/")
     parser.add_argument("--archive-name", help="Output archive name and top-level archive directory")
     args = parser.parse_args()

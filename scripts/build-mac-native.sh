@@ -21,6 +21,11 @@ fi
 printf '%s  %s\n' "$HEADERS_SHA256" "$HEADERS" | shasum -a 256 --check
 
 npm ci --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+node <<'NODE'
+const fs = require('fs')
+const source = 'node_modules/keyboard-layout/src/keyboard-layout-manager-mac.mm'
+fs.writeFileSync(source, fs.readFileSync(source, 'utf8').replace(/\bHandle</g, 'v8::Handle<'))
+NODE
 NODE_GYP="$BUILD_ROOT/node_modules/.bin/node-gyp"
 
 build_addon() {
@@ -62,11 +67,11 @@ cp "$BUILD_ROOT/node_modules/sqlite3/build/Release/node_sqlite3.node" \
   "$SQLITE_OUTPUT/node_sqlite3.node"
 
 for binary in "$OUTPUT_ROOT"/dist/*.node "$SQLITE_OUTPUT/node_sqlite3.node"; do
-  lipo -verify_arch x86_64 "$binary"
+  lipo "$binary" -verify_arch x86_64
 done
 
 cd "$PROJECT_ROOT"
 npm install --ignore-scripts --no-audit --no-fund
 npm run check:mac
 npm run build:mac
-echo "Created release/OpenVK-darwin-x64/OpenVK.app"
+echo "Created release/OpenVK-darwin-x64/OpenVK Messenger.app"
