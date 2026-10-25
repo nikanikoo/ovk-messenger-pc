@@ -99769,7 +99769,7 @@ module.exports = function(e) {
             t = this.props.area,
             n = this.props.photo;
           if (!n) return this.renderError();
-          var o = f.PhotoAttachment.GetByMaxSize(n.sizes, e.width, e.height);
+          var o = f.PhotoAttachment.GetBestQuality(n.sizes);
           if (!o) return this.renderError();
           var r = {},
             i = {},
