@@ -21416,7 +21416,10 @@ module.exports = function(e) {
       return a(e, [{
         key: "createSound",
         value: function() {
-          this.sound || (this.sound = new Audio, this.sound.volume = 1, this.sound.src = n(1191), this.sound.addEventListener("ended", this.onSoundEnded))
+          this.sound || (this.sound = new Audio, this.sound.volume = 1, this.sound.addEventListener("ended", this.onSoundEnded));
+          var customSource = window.localStorage.getItem("openvk.notifications.customSound");
+          var source = customSource || n(1191);
+          this.sound.src !== source && (this.sound.src = source)
         }
       }, {
         key: "show",
@@ -46975,6 +46978,12 @@ module.exports = function(e) {
       settings_notifications_communities: "Community messages",
       settings_notifications_private: "Private messages",
       settings_notifications_sound: "Sound",
+      settings_notifications_custom_sound: "Notification melody",
+      settings_notifications_sound_choose: "Choose file",
+      settings_notifications_sound_none: "No file selected",
+      settings_notifications_sound_preview: "Preview",
+      settings_notifications_sound_reset: "Reset",
+      settings_notifications_sound_too_large: "Choose an audio file up to 2 MB",
       settings_notifications_text: "Notification text",
       settings_notifications_text_name_only: "Only name",
       settings_notifications_text_all: "Name and text",
@@ -47846,6 +47855,12 @@ module.exports = function(e) {
       settings_notifications_communities: "Сообщения сообществ",
       settings_notifications_private: "Личные сообщения",
       settings_notifications_sound: "Звук",
+      settings_notifications_custom_sound: "Мелодия уведомлений",
+      settings_notifications_sound_choose: "Выбрать файл",
+      settings_notifications_sound_none: "Файл не выбран",
+      settings_notifications_sound_preview: "Прослушать",
+      settings_notifications_sound_reset: "Сбросить",
+      settings_notifications_sound_too_large: "Выберите аудиофайл размером до 2 МБ",
       settings_notifications_text: "Текст в уведомлении",
       settings_notifications_text_name_only: "Только имя",
       settings_notifications_text_all: "Имя и текст",
@@ -48717,6 +48732,12 @@ module.exports = function(e) {
       settings_notifications_communities: "Повідомлення спільнот",
       settings_notifications_private: "Приватні повідомлення",
       settings_notifications_sound: "Звук",
+      settings_notifications_custom_sound: "Мелодія сповіщень",
+      settings_notifications_sound_choose: "Вибрати файл",
+      settings_notifications_sound_none: "Файл не вибрано",
+      settings_notifications_sound_preview: "Прослухати",
+      settings_notifications_sound_reset: "Скинути",
+      settings_notifications_sound_too_large: "Виберіть аудіофайл розміром до 2 МБ",
       settings_notifications_text: "Текст в сповіщенні",
       settings_notifications_text_name_only: "Лише ім'я",
       settings_notifications_text_all: "Ім'я та текст",
@@ -97867,6 +97888,7 @@ module.exports = function(e) {
     A = o(M),
     F = n(34),
     N = o(F),
+    Z = n(16),
     R = (u = s = function(e) {
       function t(e) {
         r(this, t);
@@ -97941,7 +97963,8 @@ module.exports = function(e) {
         key: "getState",
         value: function() {
           return {
-            communities: N.default.getEnabledWithNotificationsSettings()
+            communities: N.default.getEnabledWithNotificationsSettings(),
+            customSoundName: window.localStorage.getItem("openvk.notifications.customSoundName") || ""
           }
         }
       }, {
@@ -97983,7 +98006,64 @@ module.exports = function(e) {
               menuItems: this.lockScreenItems,
               selectedKey: this.props.lockScreenMode,
               onChange: this.onLockScreenChange
-            }), d.default.createElement(k.default, null, lang.settings_notifications_private), d.default.createElement(p.default, {
+            }), d.default.createElement("div", {
+              className: "openvk-notification-sound"
+            }, d.default.createElement("div", {
+              className: "settings_section openvk-notification-sound-title"
+            }, lang.settings_notifications_custom_sound), d.default.createElement("div", {
+              className: "openvk-notification-sound-file-row"
+            }, d.default.createElement("label", {
+              className: "openvk-notification-sound-choose"
+            }, lang.settings_notifications_sound_choose, d.default.createElement("input", {
+              type: "file",
+              accept: "audio/*",
+              className: "openvk-notification-sound-file-input",
+              onChange: function(event) {
+                var file = event.target.files && event.target.files[0];
+                if (!file) return;
+                if (file.size > 2097152) {
+                  event.target.value = "";
+                  window.setTimeout(function() {
+                    Z.showMessageBox({ title: lang.global_error, text: lang.settings_notifications_sound_too_large, buttons: [{ id: "submit", type: "submit", text: lang.global_ok }] });
+                  }, 0);
+                  return;
+                }
+                var reader = new FileReader();
+                reader.onload = function() {
+                  try {
+                    window.localStorage.setItem("openvk.notifications.customSound", reader.result);
+                    window.localStorage.setItem("openvk.notifications.customSoundName", file.name);
+                    e.setState({ customSoundName: file.name });
+                  } catch (_) {
+                    window.setTimeout(function() {
+                      Z.showMessageBox({ title: lang.global_error, text: lang.settings_notifications_sound_too_large, buttons: [{ id: "submit", type: "submit", text: lang.global_ok }] });
+                    }, 0);
+                  }
+                };
+                reader.readAsDataURL(file);
+              }
+            })), d.default.createElement("span", {
+              className: "openvk-notification-sound-current"
+            }, this.state.customSoundName || lang.settings_notifications_sound_none)), d.default.createElement("div", {
+              className: "openvk-notification-sound-actions"
+            }, d.default.createElement("button", {
+              type: "button",
+              disabled: !this.state.customSoundName,
+              onClick: function() {
+                var source = window.localStorage.getItem("openvk.notifications.customSound");
+                if (!source) return;
+                var audio = new Audio(source);
+                audio.play().catch(function(error) { loge("[notifications.previewSound] error while play():", error); });
+              }
+            }, lang.settings_notifications_sound_preview), d.default.createElement("button", {
+              type: "button",
+              disabled: !this.state.customSoundName,
+              onClick: function() {
+                window.localStorage.removeItem("openvk.notifications.customSound");
+                window.localStorage.removeItem("openvk.notifications.customSoundName");
+                e.setState({ customSoundName: "" });
+              }
+            }, lang.settings_notifications_sound_reset))), d.default.createElement(k.default, null, lang.settings_notifications_private), d.default.createElement(p.default, {
               enabled: this.props.privateDialogsEnabled,
               label: lang.settings_notifications_new_message_dialog,
               onToggle: this.onPrivateDialogsToggle

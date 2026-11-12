@@ -67,6 +67,61 @@ body.openvk-custom-font { font-family: var(--openvk-font-family) !important; }
 .openvk-font-option-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .openvk-font-option-sample { flex: 0 0 auto; font-size: 16px; }
 
+.openvk-notification-sound {
+  margin: 10px 0 16px 22px;
+  color: var(--base-fg);
+  font-size: 13px;
+}
+.openvk-notification-sound-title {
+  margin: 16px 0 10px;
+}
+.openvk-notification-sound-file-row {
+  display: flex;
+  align-items: center;
+  max-width: 420px;
+}
+.openvk-notification-sound-choose {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-block;
+  overflow: hidden;
+  padding: 7px 11px;
+  color: var(--button-fg);
+  background: var(--button-bg);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-right: 10px;
+}
+.openvk-notification-sound-choose:hover { background: var(--button-hover-bg); }
+.openvk-notification-sound-file-input {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.openvk-notification-sound-current {
+  display: block;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--base-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.openvk-notification-sound-actions { display: flex; margin-top: 8px; }
+.openvk-notification-sound-actions button {
+  padding: 5px 9px; color: var(--link-fg); background: var(--buttonlight-bg);
+  border: 0; border-radius: 3px; cursor: pointer; font: inherit;
+  margin-right: 8px;
+}
+.openvk-notification-sound-actions button:disabled { opacity: .5; cursor: default; }
+
 .settings_header .openvk-theme-menu {
   position: absolute;
   z-index: 30;
