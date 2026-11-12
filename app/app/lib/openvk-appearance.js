@@ -162,13 +162,14 @@
         accent: typeof saved.accent === 'string' ? saved.accent : '',
         accentId: typeof saved.accentId === 'string' ? saved.accentId : '',
         customColor: /^#[0-9a-f]{6}$/i.test(saved.customColor || '') ? saved.customColor.toUpperCase() : '#5181B8',
+        fonts: saved.fonts && typeof saved.fonts === 'object' ? saved.fonts : {},
         squareAvatars: saved.squareAvatars === true,
         squareBadges: saved.squareBadges === true,
         lightThemeSelection: lightThemeSelection,
         darkThemeSelection: darkThemeSelection
       }
     } catch (_) {
-      return { theme: 'classic', telegramThemes: [], cssThemes: [], telegramThemeId: '', telegramTheme: null, accent: '', accentId: '', customColor: '#5181B8', squareAvatars: false, squareBadges: false, lightThemeSelection: { id: 'classic', telegramId: '' }, darkThemeSelection: { id: 'night', telegramId: '' } }
+      return { theme: 'classic', telegramThemes: [], cssThemes: [], telegramThemeId: '', telegramTheme: null, accent: '', accentId: '', customColor: '#5181B8', fonts: {}, squareAvatars: false, squareBadges: false, lightThemeSelection: { id: 'classic', telegramId: '' }, darkThemeSelection: { id: 'night', telegramId: '' } }
     }
   }
 
@@ -238,6 +239,69 @@
 
   function currentTheme() {
     return themeForSelection(prefs.theme, prefs.telegramThemeId)
+  }
+
+  function currentFontKey() {
+    return prefs.theme === 'telegram' ? 'telegram:' + prefs.telegramThemeId : prefs.theme
+  }
+
+  function applyFont() {
+    var family = prefs.fonts[currentFontKey()] || ''
+    var stack = family === '__system__'
+      ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+      : family ? JSON.stringify(family) + ', sans-serif' : ''
+    document.documentElement.style.setProperty('--openvk-font-family', stack)
+    document.body.classList.toggle('openvk-custom-font', !!family)
+  }
+
+  var systemFonts = null
+  var systemFontsLoading = false
+  var systemFontsCallbacks = []
+  function loadSystemFonts(callback) {
+    if (systemFonts) return callback(systemFonts)
+    systemFontsCallbacks.push(callback)
+    if (systemFontsLoading) return
+    systemFontsLoading = true
+    var childProcess = require('child_process')
+    var platform = process.platform
+    var command, args
+    if (platform === 'win32') {
+      command = 'powershell.exe'
+      args = ['-NoProfile', '-NonInteractive', '-Command', '[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding; Add-Type -AssemblyName System.Drawing; (New-Object System.Drawing.Text.InstalledFontCollection).Families | ForEach-Object { $_.Name }']
+    } else if (platform === 'darwin') {
+      command = 'system_profiler'
+      args = ['-json', 'SPFontsDataType']
+    } else {
+      command = 'fc-list'
+      args = ['--format', '%{family[0]}\\n']
+    }
+    childProcess.execFile(command, args, { maxBuffer: 4 * 1024 * 1024 }, function (error, stdout) {
+      var fonts = []
+      if (!error && stdout) {
+        if (platform === 'win32') {
+          stdout.split(/\r?\n/).forEach(function (line) { if (line.trim()) fonts.push(line.trim()) })
+        } else if (platform === 'darwin') {
+          try {
+            var data = JSON.parse(stdout)
+            function collect(value) {
+              if (!value) return
+              if (Array.isArray(value)) return value.forEach(collect)
+              if (typeof value !== 'object') return
+              Object.keys(value).forEach(function (key) {
+                if (/^(font_family|family)$/i.test(key) && typeof value[key] === 'string') fonts.push(value[key])
+                else collect(value[key])
+              })
+            }
+            collect(data.SPFontsDataType)
+          } catch (_) {}
+        } else {
+          stdout.split(/\r?\n/).forEach(function (line) { line.split(',').forEach(function (family) { fonts.push(family.trim()) }) })
+        }
+      }
+      systemFonts = Array.from(new Set(fonts.filter(Boolean))).sort(function (a, b) { return a.localeCompare(b) })
+      systemFontsLoading = false
+      systemFontsCallbacks.splice(0).forEach(function (done) { done(systemFonts) })
+    })
   }
 
   function themeForSelection(themeId, telegramId) {
@@ -533,6 +597,7 @@
       'body.openvk-theme-classic .update_buttons>.wide_button:not(.-disabled):active,body.openvk-theme-day .update_buttons>.wide_button:not(.-disabled):active{background-color:' + scaledColor(accent, .78) + ';}'
       + 'body.openvk-theme-classic .login_submit_button:not(.-disabled):hover,body.openvk-theme-day .login_submit_button:not(.-disabled):hover{background-color:var(--ovk-accent);}'
       + 'body.openvk-theme-classic .login_submit_button:not(.-disabled):active,body.openvk-theme-day .login_submit_button:not(.-disabled):active{background-color:' + scaledColor(accent, .78) + ';}'
+    applyFont()
     document.body.classList.remove('openvk-theme-classic', 'openvk-theme-day', 'openvk-theme-tinted', 'openvk-theme-night', 'openvk-theme-telegram', 'openvk-theme-css')
     document.body.classList.add('openvk-theme-' + theme.id)
     applyShapes()
@@ -549,6 +614,8 @@
       '<div class="openvk-theme-grid" role="radiogroup" aria-label="' + lang.appearance_theme_label + '"></div>' +
       '<h3 class="openvk-accent-heading">' + words.accent + '</h3>' +
       '<div class="openvk-accent-list"></div>' +
+      '<h3 class="openvk-accent-heading">' + (lang.appearance_font || 'Font') + '</h3>' +
+      '<div class="openvk-font-picker"><button type="button" class="openvk-font-trigger" aria-haspopup="listbox" aria-expanded="false"></button><div class="openvk-font-options" role="listbox" hidden></div></div>' +
       '<h3 class="openvk-accent-heading">' + wallpaperWords.heading + '</h3>' +
       '<div class="openvk-wallpaper-row"><button type="button" class="openvk-wallpaper-thumb" aria-label="' + wallpaperWords.preview + '" title="' + wallpaperWords.preview + '"></button><button type="button" class="openvk-wallpaper-choose">' + wallpaperWords.choose + '</button><button type="button" class="openvk-wallpaper-remove">' + wallpaperWords.remove + '</button></div>' +
       checkboxMarkup('openvk-wallpaper-tile', wallpaperWords.tile) +
@@ -567,6 +634,36 @@
       themeGrid.scrollLeft = nextScroll
     }, { passive: false })
     renderPanel(root)
+    root.addEventListener('click', function (event) {
+      var trigger = event.target.closest('.openvk-font-trigger')
+      var option = event.target.closest('.openvk-font-option')
+      var picker = root.querySelector('.openvk-font-picker')
+      var list = picker && picker.querySelector('.openvk-font-options')
+      if (trigger && list) {
+        var opening = list.hidden
+        list.hidden = !opening
+        trigger.setAttribute('aria-expanded', String(opening))
+        if (opening && !list.getAttribute('data-loaded')) {
+          list.textContent = lang.appearance_font_loading || 'Loading fonts…'
+          loadSystemFonts(function (fonts) {
+            if (!document.documentElement.contains(list)) return
+            renderFontOptions(root, fonts)
+          })
+        }
+        return
+      }
+      if (option) {
+        var family = option.getAttribute('data-font') || ''
+        prefs.fonts[currentFontKey()] = family
+        savePrefs()
+        applyTheme()
+        return
+      }
+      if (list && !picker.contains(event.target)) {
+        list.hidden = true
+        picker.querySelector('.openvk-font-trigger').setAttribute('aria-expanded', 'false')
+      }
+    })
     installThemeMenu(root)
     onCheckbox(root.querySelector('.openvk-square-avatars-control'), function () {
       prefs.squareAvatars = !prefs.squareAvatars
@@ -611,6 +708,7 @@
     var grid = root.querySelector('.openvk-theme-grid')
     var swatches = root.querySelector('.openvk-accent-list')
     if (!grid || !swatches) return
+    renderFontPicker(root)
     root.classList.toggle('openvk-telegram-active', prefs.theme === 'telegram' && !!prefs.telegramTheme)
     root.classList.toggle('openvk-css-active', prefs.cssThemes.some(function (item) { return item.id === prefs.theme }))
     grid.innerHTML = themes.map(function (theme) {
@@ -678,6 +776,51 @@
     })
     setCheckbox(root.querySelector('.openvk-wallpaper-tile'), wallpaper.tile)
     applyWallpaper()
+  }
+
+  function renderFontPicker(root) {
+    var trigger = root.querySelector('.openvk-font-trigger')
+    if (!trigger) return
+    var family = prefs.fonts[currentFontKey()] || ''
+    trigger.textContent = family === '__system__' ? (lang.appearance_font_system || 'System') : family || (lang.appearance_font_default || 'Client default')
+    trigger.style.fontFamily = family === '__system__' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' : family ? JSON.stringify(family) + ', sans-serif' : ''
+    var list = root.querySelector('.openvk-font-options')
+    if (!list.hidden && list.getAttribute('data-loaded') === 'true') {
+      renderFontOptions(root, systemFonts || [])
+    }
+  }
+
+  function renderFontOptions(root, fonts) {
+    var list = root.querySelector('.openvk-font-options')
+    if (!list) return
+    list.textContent = ''
+    list.setAttribute('data-loaded', 'true')
+    var choices = [
+      { name: lang.appearance_font_default || 'Client default', family: '' },
+      { name: lang.appearance_font_system || 'System', family: '__system__' }
+    ]
+      .concat(fonts.map(function (name) { return { name: name, family: name } }))
+    choices.forEach(function (choice) {
+      var button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'openvk-font-option'
+      button.setAttribute('role', 'option')
+      button.setAttribute('data-font', choice.family)
+      button.setAttribute('aria-selected', String((prefs.fonts[currentFontKey()] || '') === choice.family))
+      var name = document.createElement('span')
+      name.className = 'openvk-font-option-name'
+      name.textContent = choice.name
+      var sample = document.createElement('span')
+      sample.className = 'openvk-font-option-sample'
+      sample.textContent = 'Aa Бб 123'
+      var stack = choice.family === '__system__'
+        ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+        : choice.family ? JSON.stringify(choice.family) + ', sans-serif' : ''
+      if (stack) sample.style.setProperty('font-family', stack, 'important')
+      button.appendChild(name)
+      button.appendChild(sample)
+      list.appendChild(button)
+    })
   }
 
   function openThemeContextMenu(event, id) {
