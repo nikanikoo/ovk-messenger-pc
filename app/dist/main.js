@@ -36855,9 +36855,10 @@ module.exports = function(e) {
 
   function r() {
     var e = (0, w.getMainWindowDisplay)();
+    var t = e.workArea || e.bounds;
     return {
-      x: e.bounds.x + e.workArea.x + e.workAreaSize.width,
-      y: e.bounds.y + e.workArea.y + e.workAreaSize.height
+      x: t.x + t.width,
+      y: t.y + t.height
     }
   }
 
